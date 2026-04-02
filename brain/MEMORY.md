@@ -108,6 +108,8 @@ Reference them here by name only.
 
 This repo is the homework. The goal: publish a base MCP model on GitHub that anyone can clone and use to run their own AI operating layer. Local inference. No cloud dependency. Self-hosted. The foundation is the advantage — share it.
 
+**LinkedIn launched 2026-04-01.** Post live. Repo public. Testers incoming.
+
 **Two testers are coming.** They bring their ideas. The stack develops and executes them. This platform proves the model — not just for Rob, but for anyone who clones it. The testers are the first proof that this is replicable.
 
 LinkedIn launch target: Phase 1 complete (Nerve UI + dashboard = visual proof).
