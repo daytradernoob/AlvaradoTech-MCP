@@ -7,7 +7,7 @@
 
 You've been invited to test a self-hosted AI execution platform.
 
-Here's what that means in plain terms: you send a message to a Telegram bot. The bot plans the task, asks for your approval, executes it on real hardware, and reports back. No cloud. No subscription. Runs on hardware sitting in a home office in Gilbert, AZ.
+Here's what that means in plain terms: you send a message to a Telegram bot. The bot plans the task, asks for your approval, executes it on real hardware, and reports back. No cloud. No subscription. Runs on hardware sitting in a home office in the Phoenix metro, AZ.
 
 Your job: bring an idea. A real one. Something you actually want built or automated. We'll use this platform to develop and execute it.
 
@@ -32,17 +32,19 @@ You don't need to install anything on your own machine. The entire stack runs on
 
 ---
 
-## Step 2 — Start a Conversation
+## Step 2 — The First Conversation
 
-Open Telegram and message the bot. Start simple:
+Your first conversation with MCP is intentional. Before it helps you with anything, it will ask you a series of questions.
 
-```
-who are you?
-```
+This is not a form. It is a conversation.
 
-Expected response: The agent introduces itself as MCP and asks what you need.
+MCP wants to understand who you are, how you think, and what you are actually trying to solve. Not the surface version — the real one. It will push gently if your answers are thin. That is on purpose.
 
-If you get no response within 60 seconds — tell Rob. Something's down.
+The quality of every future response depends on this first conversation. The more honest you are, the sharper MCP gets. Output relies on input.
+
+Expect 5-10 minutes. It only happens once.
+
+If you get no response within 60 seconds of your first message — tell Rob. Something's down.
 
 ---
 
