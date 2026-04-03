@@ -93,11 +93,30 @@ Every tool, every skill, every agent is here to extend the operator's capabiliti
 
 ---
 
+## Business Direction
+*Established: 2026-04-03*
+
+This is a product now, not just a personal platform.
+
+Businesses want AI. They fear the cloud — HIPAA, privilege, compliance, data sovereignty, cost control. The gap between "wants AI" and "can deploy and operate local AI" is enormous and not closing on its own.
+
+AlvaradoTech-MCP is the layer that bridges it. On-prem. Local inference. Stays in the building. Managed by someone who can think in these terms so the customer doesn't have to.
+
+**The Nutanix parallel:** Nutanix built the layer that made converged infrastructure accessible to teams who couldn't think in VMware + SAN terms. This does the same for local AI. Rob knows this playbook.
+
+**Target markets — first wave:** Medical practices (HIPAA), law firms (privilege), financial advisors (compliance), data-sensitive SMBs.
+
+**Validated hardware SKU:** Mac Mini M4 Pro 48GB — $1,799. Runs 70B models. Replaces 2-3 machines. "The box."
+
+**Version 1 motion:** Rob installs. Rob configures. Customer uses via Telegram. Monthly retainer.
+
+See `brain/BUSINESS.md` for full thesis.
+
 ## Public Mission
 
-This repo is the homework. The goal: publish a base MCP model on GitHub that anyone can clone and use to run their own AI operating layer. Local inference. No cloud dependency. Self-hosted. The foundation is the advantage — share it.
+This repo is the foundation. The goal: a deployable, on-prem AI operating layer that any business can run on hardware they own — no cloud dependency, no data exposure, no vendor lock-in.
 
-We improve this platform continuously through hands-on operation, external research (Goose, context7, task-master-ai, etc.), and direct tester feedback. Every lesson learned gets committed.
+We improve this platform continuously through hands-on operation, external research, and real customer deployments. Every lesson learned gets committed.
 
 ---
 

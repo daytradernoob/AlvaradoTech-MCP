@@ -1,138 +1,142 @@
 # ROADMAP.md — The Build Sequence
-*Last Updated: 2026-04-03 | Version: 1.3*
+*Last Updated: 2026-04-03 | Version: 1.4*
 
 ---
 
 ## Strategic Context
 
-The RJA stack is built in layers. Infrastructure first, then intelligence, then automation, then compounding.
+**This is a product now, not just a personal platform.**
 
-We do not skip layers. A fleet of agents with no reliable foundation is a liability. We build from the ground up, we build it right, and we let the edge compound.
+The RJA stack is built in layers. But we now know where those layers are going: a deployable, on-prem AI operating layer for businesses that want AI capability without cloud dependency or data exposure.
 
-Each phase delivers a stable platform that the next phase builds on. Each initiative — current or future — plugs into this foundation.
+Every phase below builds toward that. Infrastructure first, then reliability, then skills, then product.
+
+We do not skip layers. The foundation is the advantage.
 
 ---
 
 ## Phase 0 — FOUNDATION
 **Status: ✅ COMPLETE — 2026-04-01**
 
-Goal: OpenClaw running with identity, memory, and Telegram comms confirmed.
-
 | Task | Status | Notes |
 |---|---|---|
 | OpenClaw installed | ✅ DONE | 2026-03-29 |
 | Telegram connected | ✅ DONE | 2026-03-29 |
-| SOUL.md created | ✅ DONE | 2026-03-29 |
-| MEMORY.md created | ✅ DONE | 2026-03-29 |
-| LEARN.md created | ✅ DONE | 2026-03-29 |
-| ROADMAP.md created | ✅ DONE | 2026-03-29 |
-| Workspace context injection confirmed | ✅ DONE | 2026-04-01 — AGENTS.md, SOUL.md, IDENTITY.md auto-injected each session |
-| MCP agent identity confirmed on Telegram | ✅ DONE | 2026-04-01 — Bot responds as MCP |
+| Brain files created | ✅ DONE | SOUL.md, MEMORY.md, LEARN.md, ROADMAP.md |
+| Workspace context injection confirmed | ✅ DONE | 2026-04-01 |
+| MCP identity confirmed on Telegram | ✅ DONE | 2026-04-01 |
 
 ---
 
 ## Phase 1 — COCKPIT & VISIBILITY
 **Status: ✅ COMPLETE — 2026-04-01**
 
-Goal: Nerve installed and running. Full fleet visibility. Bot-Review dashboard live.
-
 | Task | Status | Notes |
 |---|---|---|
-| Verify Node.js 22+ is installed | ✅ DONE | 2026-04-01 — v22.22.2 |
-| Install Nerve via one-command installer | ✅ DONE | 2026-04-01 — v1.5.2 |
-| Configure Nerve — LAN mode with auth | ✅ DONE | 2026-04-01 — :3080, scrypt auth |
-| Verify Nerve connects to OpenClaw gateway | ✅ DONE | 2026-04-01 — Connected |
-| Install OpenClaw Bot-Review dashboard | ✅ DONE | 2026-04-01 — http://192.168.0.165:3081 |
-| Verify Bot-Review reads openclaw.json correctly | ✅ DONE | 2026-04-01 — Operational |
-| Pi-4 watchdog deployed | ✅ DONE | 2026-04-01 — Upgraded to check actual service endpoints |
-| LinkedIn launch + repo public | ✅ DONE | 2026-04-01 — v1.0.0 tagged |
+| Nerve UI installed + LAN auth | ✅ DONE | :3080, scrypt auth |
+| Bot-Review dashboard | ✅ DONE | :3081 |
+| Pi-4 watchdog v2 | ✅ DONE | Checks actual endpoints, not just ping |
+| LinkedIn launch + repo public | ✅ DONE | v1.0.0 tagged |
 
 ---
 
 ## Phase 1.5 — PLATFORM HARDENING
-**Status: IN PROGRESS — 2026-04-03**
+**Status: 🔄 IN PROGRESS — 2026-04-03**
 
-Goal: Bot that actually works. Reliable model. Clean workspace. Onboarding that runs correctly.
-
-Research source: [block/goose](https://github.com/block/goose) — reviewed 2026-04-03. Key design patterns identified and being integrated.
+Goal: Reliable enough to demo to a customer. Consistent behavior. No garbage output.
 
 | Task | Status | Notes |
 |---|---|---|
-| Fix MCP identity (Qwen override) | ✅ DONE | 2026-04-01 — IDENTITY.md + AGENTS.md identity lock |
-| Fix double Telegram response | ✅ DONE | 2026-04-02 — streaming: off |
-| Fix model context (4096 truncation) | ✅ DONE | 2026-04-03 — mcp-qwen3 custom model, 8192 ctx |
-| Fix workspace file bloat | ✅ DONE | 2026-04-03 — AGENTS.md trimmed from 2135 to 556 words |
-| Fix false HEARTBEAT_OK responses | ✅ DONE | 2026-04-03 — Heartbeat section removed from AGENTS.md |
-| Fix unauthorized file writes | ✅ DONE | 2026-04-03 — Explicit no-write rule added to AGENTS.md |
-| Watchdog v2 — check actual endpoints | ✅ DONE | 2026-04-03 — Checks Ollama API + OpenClaw gateway port |
-| Tester onboarding interview flow | 🔄 IN PROGRESS | First contact interview working for new users |
-| Context compaction layer | ⬜ NEXT | Goose-inspired: auto-compress at 80% token capacity |
-| Tool inspection layer | ⬜ | Goose-inspired: 5-stage inspect before tool execution |
-| Per-tester isolated agents | ⬜ | Each tester gets own agent + USER.md via OpenClaw agents command |
-| OpenClaw update to v2026.4.2 | ⬜ | Current: v2026.3.28 — update when stable window available |
+| Fix MCP identity (Qwen override) | ✅ DONE | 2026-04-01 |
+| Fix double Telegram response | ✅ DONE | streaming: off |
+| Fix model context truncation | ✅ DONE | mcp-qwen3, 8192 ctx |
+| Trim workspace files | ✅ DONE | 556 words total |
+| Fix HEARTBEAT_OK false positives | ✅ DONE | Heartbeat removed from AGENTS.md |
+| Fix unauthorized file writes | ✅ DONE | Explicit no-write rule in AGENTS.md |
+| Watchdog v2 | ✅ DONE | Endpoint checks |
+| Context compaction layer | ⬜ NEXT | Auto-compress at 80% token capacity |
+| Tool inspection layer | ⬜ | Prevent unauthorized tool use |
+| Per-tester isolated agents | ⬜ | OpenClaw multi-agent for tester onboarding |
+| Hardware upgrade | ⬜ | Mac Mini M4 Pro 48GB — validated SKU |
+| OpenClaw update to v2026.4.2 | ⬜ | Current: v2026.3.28 |
 
 ---
 
-## Phase 2 — RECIPE SYSTEM & SKILLS
+## Phase 2 — SKILLS & RECIPES
 **Status: QUEUED**
 
-Goal: MCP can execute structured, repeatable workflows from Telegram commands. First base skills installed.
-
-Research source: Goose recipe/workflow architecture — declarative YAML/JSON task definitions with parameter validation, extension injection, and Unicode injection protection.
+Goal: MCP executes structured, repeatable workflows. First real skills installed. Platform demonstrates value to a non-technical observer.
 
 | Task | Status | Notes |
 |---|---|---|
-| Define recipe schema for RJA stack | ⬜ | Adapt Goose-style declarative workflow definitions |
-| Base skill: web fetch (HTTPS-only, sanitized output) | ⬜ | Security-first: sanitize, no redirect following to internal IPs |
+| Hardware scout skill | ⬜ FIRST | eBay + Craigslist + r/hardwareswap search. First real skill. |
 | Base skill: system status report | ⬜ | Fleet health snapshot on demand |
-| Base skill: web search | ⬜ | Already live via Brave — formalize as skill |
-| Base skill: X/Twitter RSS reader | ⬜ | Read-only, no auth required |
-| Recipe: daily digest | ⬜ | Fleet health + calendar + notable events → Telegram |
-| Recipe: idea workshop | ⬜ | Structured brainstorm → output document |
+| Base skill: web fetch (sanitized) | ⬜ | HTTPS-only, no internal IP redirects |
+| Base skill: web search | ⬜ | Brave already live — formalize as skill |
+| Base skill: X/Twitter RSS reader | ⬜ | Read-only, no auth |
+| Recipe: daily digest | ⬜ | Fleet health + notable events → Telegram |
+| Recipe: idea workshop | ⬜ | Structured brainstorm → output doc |
+| Recipe: hardware scout (scheduled) | ⬜ | Daily scan for target hardware deals |
 
 ---
 
-## Phase 3 — HOME OFFICE NETWORK
+## Phase 3 — CUSTOMER PRODUCT V1
+**Status: QUEUED — Active development target**
+
+Goal: One paying customer on a managed install. Build the install experience and demo. Validate the business thesis with real money.
+
+| Task | Status | Notes |
+|---|---|---|
+| Validated hardware SKU finalized | ⬜ | Mac Mini M4 Pro 48GB — "the box" |
+| Install guide: customer-facing | ⬜ | Sub-30 min. No JSON editing. |
+| Brain file templates per vertical | ⬜ | Medical, legal, financial, SMB |
+| Demo script | ⬜ | 5 min. One use case. Clear value. |
+| First customer conversation | ⬜ | People already showing interest. Get one on a call. |
+| First managed install | ⬜ | Rob installs + configures. Customer uses. |
+| Support model defined | ⬜ | Monthly retainer. What's included. |
+| Pricing model v1 | ⬜ | Hardware + install + monthly support |
+
+---
+
+## Phase 4 — HOME OFFICE NETWORK
 **Status: QUEUED**
 
-Goal: The RJA Home Office operates as a managed, intelligent network. IoT, compute, and networking all known and controlled by MCP.
+Goal: RJA home office as the reference architecture. What we run ourselves is what we sell.
 
 | Task | Status | Notes |
 |---|---|---|
 | Network topology audit | ⬜ | Document all devices, IPs, roles |
-| Device inventory | ⬜ | All IoT, compute, network gear |
-| Define network zones | ⬜ | IoT VLAN, trusted VLAN, DMZ if needed |
-| Select network management approach | ⬜ | Research: Unifi, OPNsense |
-| Build RJA Home Office MCP Server | ⬜ | Exposes: IoT controls, network state, device health |
-| Connect MCP server to OpenClaw agent | ⬜ | Agent queries and controls the home office |
+| Device inventory | ⬜ | IoT, compute, network gear |
+| Build RJA Home Office MCP Server | ⬜ | IoT controls, network state, device health |
+| Connect to OpenClaw agent | ⬜ | Agent can query and control the home office |
 | Automate network health reporting | ⬜ | Daily digest to Telegram |
 
 ---
 
-## Phase 4 — INITIATIVE EXPANSION
+## Phase 5 — PLATFORM SCALE
 **Status: FUTURE**
 
-Goal: The RJA stack extends to support additional business initiatives. Each initiative gets its own domain, its own agents, its own MCP servers.
+Goal: Guided self-install. Vertical-specific configurations. The Nutanix play.
 
 | Task | Status | Notes |
 |---|---|---|
-| Define first expansion initiative | ⬜ | Rob's call. The stack is ready when he is. |
-| Scope domain-specific MCP server(s) | ⬜ | What data and tools does this initiative need? |
-| Deploy initiative-specific agents | ⬜ | Dedicated agents with their own soul, memory, skills |
-| Connect to Nerve fleet | ⬜ | All agents managed from one cockpit |
+| Installer script | ⬜ | Non-technical IT person can run it |
+| Vertical configs: Medical | ⬜ | HIPAA-aligned brain files, use case templates |
+| Vertical configs: Legal | ⬜ | Privilege-aware defaults |
+| Vertical configs: Financial | ⬜ | Compliance-aligned defaults |
+| Partner / reseller model | ⬜ | Others install, Rob supports |
+| Public case studies | ⬜ | Reference customers, documented outcomes |
 
 ---
 
 ## The Compounding Principle
 
-Each phase builds leverage for the next:
-
-- Phase 0 gives us identity and comms.
-- Phase 1 gives us visibility and control.
-- Phase 1.5 gives us a platform that actually works.
-- Phase 2 gives us repeatable workflows and skills.
-- Phase 3 gives us a stable, intelligent home base.
-- Phase 4 multiplies across any initiative Rob chooses to run.
+- Phase 0-1: Identity and visibility.
+- Phase 1.5: A platform that works.
+- Phase 2: A platform that does useful things.
+- Phase 3: A platform someone pays for.
+- Phase 4: A reference architecture we live in.
+- Phase 5: A platform anyone can deploy.
 
 The foundation is not overhead. The foundation is the advantage.
 

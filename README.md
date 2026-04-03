@@ -132,13 +132,15 @@ Store secrets in `~/.openclaw/openclaw.json` — it's in `.gitignore`.
 
 ---
 
-## Why I Built This
+## Why This Exists
 
-AI is not a product. It's an operating layer.
+Businesses want AI. They fear the cloud.
 
-The same insight that drove infrastructure shifts in enterprise IT applies here: the people who own the layer win. This repo is the foundation — a replicable base that anyone can clone, configure, and extend with their own ideas.
+Not irrationally — HIPAA, attorney-client privilege, compliance, data sovereignty. The gap between "wants AI capability" and "can deploy and operate local AI" is enormous. Most businesses can't bridge it themselves. They don't have the infrastructure knowledge. They don't think in these terms.
 
-Testers are already building on it. Their ideas, executed by the stack.
+This platform is the bridge. Local inference. No cloud dependency. Stays in the building. Managed by someone who understands the stack so the customer doesn't have to.
+
+The open-source repo is the foundation. The product is the deployment, configuration, and support on top of it.
 
 ---
 
