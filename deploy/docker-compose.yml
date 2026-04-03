@@ -1,0 +1,56 @@
+version: '3.8'
+
+# AlvaradoTech-MCP — VPS Cloud Deployment
+# Track B: OpenClaw gateway + Claude API inference (no local GPU required)
+# Run: docker-compose up -d
+# Requires: .env file (copy from .env.example and fill in)
+
+services:
+  mcp-gateway:
+    image: node:22-slim
+    container_name: mcp-gateway
+    restart: unless-stopped
+    working_dir: /app
+    environment:
+      - OPENCLAW_STATE_DIR=/data
+      - OPENCLAW_CONFIG_PATH=/data/openclaw.json
+      - NODE_ENV=production
+    env_file:
+      - .env
+    volumes:
+      - openclaw-data:/data
+      - ./workspace:/data/workspace:ro
+    ports:
+      - "18789:18789"
+    command: >
+      sh -c "npm install -g openclaw@latest &&
+             openclaw gateway --port 18789 --bind lan"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:18789/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  mcp-watchdog:
+    image: alpine:latest
+    container_name: mcp-watchdog
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: >
+      sh -c "apk add --no-cache curl &&
+             while true; do
+               if ! curl -sf --connect-timeout 5 http://mcp-gateway:18789/ > /dev/null 2>&1; then
+                 curl -s -X POST \"https://api.telegram.org/bot$${TELEGRAM_BOT_TOKEN}/sendMessage\"
+                   -d chat_id=\"$${TELEGRAM_CHAT_ID}\"
+                   -d text=\"MCP Gateway unreachable on VPS\";
+               fi;
+               sleep 300;
+             done"
+    depends_on:
+      - mcp-gateway
+
+volumes:
+  openclaw-data:
+    driver: local

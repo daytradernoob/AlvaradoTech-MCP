@@ -58,7 +58,28 @@ Total cost: hardware you probably already have. Running cost: electricity.
 
 ---
 
-## Clone and Run It
+## Two Ways to Run It
+
+### Track A — On-Prem (Recommended for regulated industries)
+Your data never leaves your building. Full 70B model quality. One-time hardware cost.
+
+**Recommended hardware:** Mac Mini M4 Pro, 48GB unified memory (~$1,799)
+
+### Track B — VPS Cloud (~$50-70/month)
+No hardware purchase. Runs on a $20/month VPS with Claude API for inference. For cloud-comfortable customers.
+
+```bash
+# One-command VPS deploy (Ubuntu 22.04)
+git clone https://github.com/daytradernoob/AlvaradoTech-MCP.git
+cd AlvaradoTech-MCP
+bash deploy/vps-setup.sh
+```
+
+Requirements: Anthropic API key, Telegram bot token. See `deploy/.env.example`.
+
+---
+
+## Clone and Run It (On-Prem)
 
 ```bash
 git clone git@github.com:daytradernoob/AlvaradoTech-MCP.git
