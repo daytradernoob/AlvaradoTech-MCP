@@ -1,5 +1,5 @@
 # MEMORY.md — Persistent Knowledge Base
-*Last Updated: 2026-04-01 | Version: 1.2*
+*Last Updated: 2026-04-03 | Version: 1.3*
 
 ---
 
@@ -21,22 +21,35 @@
 ## System State
 
 ### OpenClaw
-- **Status:** OPERATIONAL — Phase 0 complete 2026-04-01
+- **Status:** OPERATIONAL
+- **Version:** v2026.3.28 (update to v2026.4.2 pending)
 - **Telegram:** CONNECTED + VERIFIED — Bot responds as MCP
-- **MCP Identity:** CONFIRMED — IDENTITY.md + SOUL.md injected each session
-- **Workspace Injection:** CONFIRMED — AGENTS.md, SOUL.md, IDENTITY.md auto-load
-- **Nerve:** OPERATIONAL — http://YOUR_SEI_IP:3080 — password: [stored locally]
-- **Bot-Review Dashboard:** OPERATIONAL — http://YOUR_SEI_IP:3081
+- **MCP Identity:** CONFIRMED — IDENTITY.md + SOUL.md + AGENTS.md injected each session
+- **Model:** mcp-qwen3 (custom Ollama model — qwen3:8b base, num_ctx 8192)
 - **Gateway Port:** 18789
 - **Config Path:** `~/.openclaw/openclaw.json`
 - **Gateway Host:** SEi-miniPC (192.168.0.165)
 - **Inference Host:** MSI-RTX (192.168.0.146) — Ollama + RTX 3060
-- **Models:** qwen3-4k (primary), llama3.2:3b (available)
 
-### Home Office Network (RJA-NET)
-- **Status:** DESIGN PHASE — 2026-03-29
-- **Scope:** IoT, networking, all tech inside RJA Home Office
-- **Next Step:** Network topology audit and device inventory
+### Nerve UI
+- **Status:** OPERATIONAL — http://192.168.0.165:3080
+- **Auth:** scrypt password hash, NERVE_AUTH=true
+- **Version:** v1.5.2
+
+### Bot-Review Dashboard
+- **Status:** OPERATIONAL — http://192.168.0.165:3081
+
+### Pi-4 Watchdog
+- **Status:** OPERATIONAL — cron every 5 min
+- **v2 upgrade:** Checks Ollama API (:11434) and OpenClaw gateway (:18789) — not just ping
+
+### Fleet
+| Host | IP | SSH User | Role |
+|---|---|---|---|
+| MSI-RTX | 192.168.0.146 | rob-alvarado | Ollama inference, RTX 3060 |
+| SEi-miniPC | 192.168.0.165 | rob-alvarado | OpenClaw gateway, Nerve, Bot-Review |
+| Pi-4 | 192.168.0.204 | robalvarado | Watchdog (note: no hyphen in username) |
+| HP-1030-G2 | 192.168.0.207 | rob-alvarado | Claude Code sessions |
 
 ---
 
@@ -44,63 +57,39 @@
 
 | Date | Decision | Rationale |
 |---|---|---|
-| 2026-03-29 | OpenClaw selected as execution engine | Multi-agent, persistent, Telegram-native, Nerve cockpit available |
+| 2026-03-29 | OpenClaw selected as execution engine | Multi-agent, persistent, Telegram-native, Nerve cockpit |
 | 2026-03-29 | Nerve selected as UI layer | Voice, kanban, fleet control, per-agent soul/memory/workspace |
-| 2026-03-29 | Bot-Review dashboard noted for monitoring | Lightweight, reads config directly, no DB, good for fleet health |
 | 2026-03-29 | MCP brain externalized to .MD files | Persistent, versionable, loadable into any session |
+| 2026-04-01 | LinkedIn launched + repo public | v1.0.0 tagged. Two testers incoming. |
+| 2026-04-02 | Telegram streaming set to off | Prevented double-response from partial message replays |
+| 2026-04-03 | mcp-qwen3 as primary model | Custom Ollama model: qwen3:8b base + num_ctx 8192. Fixes context truncation that caused garbage output. |
+| 2026-04-03 | Goose design patterns adopted as roadmap | Progressive context compaction, tool inspection, recipe system, SubTask dispatch — integrated into Phase 1.5 and Phase 2 planning |
 
 ---
 
 ## Architecture Decisions
 
-### Why OpenClaw + Nerve (not n8n or AutoGPT)
-- OpenClaw is agent-native, not workflow-native. The RJA stack needs agents that think, not flows that execute.
-- Nerve gives real fleet control: per-agent soul, memory, workspace, kanban, voice — not just a chat window.
-- Telegram integration is first-class, not bolted on.
-- Skills system allows the agent to write its own skills. Self-improving.
+### ATC Mental Model
+MCP is an air traffic controller. It does not fly the planes — it directs them. Agents are planes. Nerve is the radar. Telegram is the radio. The operator is the decision authority.
+
+Every tool, every skill, every agent is here to extend the operator's capabilities — not replace them. Technology is the extension of the person.
 
 ### Why .MD Files as Brain
-- Loadable into any Claude session instantly.
-- Human-readable, versionable, auditable.
-- Not locked into any vendor's memory format.
+- Loadable into any Claude session instantly
+- Human-readable, versionable, auditable
+- Not locked into any vendor's memory format
 - Rob can read and edit directly. The brain is transparent.
 
-### Why MCP Protocol Matters for This Stack
+### Why MCP Protocol Matters
 - MCP = USB for AI tools. Write a server once, any compatible AI uses it.
 - Standardized, discoverable, sandboxed, composable.
-- The RJA Home Office MCP server will expose: IoT controls, network state, device health, calendar, alerts.
-- Any Claude session can connect and operate the home office.
-- Future initiatives will add their own MCP servers as domains expand.
+- Future: RJA Home Office MCP server exposes IoT controls, network state, device health.
 
----
-
-## Skills Installed
-*(Update as skills are added)*
-
-| Skill | Status | Purpose |
-|---|---|---|
-| None yet | — | — |
-
----
-
-## MCP Servers Connected
-*(Update as servers come online)*
-
-| Server | Status | Exposes |
-|---|---|---|
-| None yet | — | — |
-
----
-
-## Credentials & Secrets Location
-**DO NOT store secrets in this file.**
-Secrets live in: `~/.openclaw/.env` or system keychain.
-Reference them here by name only.
-
-| Secret Name | Purpose | Location |
-|---|---|---|
-| ANTHROPIC_API_KEY | Claude API | ~/.openclaw/.env |
-| TELEGRAM_BOT_TOKEN | Telegram bot | ~/.openclaw/openclaw.json |
+### Goose-Inspired Architecture Principles (adopted 2026-04-03)
+- **Context compaction**: Compress conversation history at 80% token capacity. Agent sees compressed context; user sees full history. Prevents model degradation on long sessions.
+- **Tool inspection**: Multi-stage validation before any tool executes. Prevents unauthorized writes, egress, and adversarial inputs.
+- **Recipe system**: Declarative workflow definitions. Repeatable tasks become commands.
+- **SubTask dispatch**: Parent agent delegates to child agents with isolated sessions. Enables per-tester isolation and background execution.
 
 ---
 
@@ -108,11 +97,7 @@ Reference them here by name only.
 
 This repo is the homework. The goal: publish a base MCP model on GitHub that anyone can clone and use to run their own AI operating layer. Local inference. No cloud dependency. Self-hosted. The foundation is the advantage — share it.
 
-**LinkedIn launched 2026-04-01.** Post live. Repo public. Testers incoming.
-
-**Two testers are coming.** They bring their ideas. The stack develops and executes them. This platform proves the model — not just for Rob, but for anyone who clones it. The testers are the first proof that this is replicable.
-
-LinkedIn launch target: Phase 1 complete (Nerve UI + dashboard = visual proof).
+We improve this platform continuously through hands-on operation, external research (Goose, context7, task-master-ai, etc.), and direct tester feedback. Every lesson learned gets committed.
 
 ---
 
@@ -121,9 +106,14 @@ LinkedIn launch target: Phase 1 complete (Nerve UI + dashboard = visual proof).
 | Date | Lesson |
 |---|---|
 | 2026-03-29 | Unknown config keys crash the OpenClaw gateway. Research docs BEFORE any config change. |
-| 2026-04-01 | OpenClaw workspace injection works — but old session history overrides it. Use `/reset` to start fresh when identity/context seems wrong. |
+| 2026-04-01 | OpenClaw workspace injection works — but old session history overrides it. Use `/reset` to start fresh. |
 | 2026-04-01 | qwen3 has strong model identity training. IDENTITY.md + identity lock at top of AGENTS.md is required to override. |
 | 2026-04-01 | Generic template files (SOUL.md, IDENTITY.md, AGENTS.md) ship with OpenClaw. All must be replaced with custom content before first use. |
+| 2026-04-02 | Telegram streaming: "partial" causes double-response on provider restart. Set to "off". |
+| 2026-04-02 | Poisoned session history propagates even after sessions.json is cleared — the .jsonl files persist. Delete both to truly reset. |
+| 2026-04-03 | qwen3-4k had num_ctx 4096 and qwen3:8b defaulted to 2048. System prompt alone was 6k tokens. Context truncation caused garbage output ("I am MCP." only), random HEARTBEAT_OK responses, and unauthorized file writes. Always verify num_ctx against actual system prompt size. |
+| 2026-04-03 | AGENTS.md bloat (2135 words) confused local models. Trimmed to 556 words. Keep workspace files lean — smaller is more reliable for local inference. |
+| 2026-04-03 | OpenClaw injects a hardcoded session-start message: "greet the user… ask what they want to do." Workspace files must account for this specific prompt to override greeting behavior. |
 
 ---
 

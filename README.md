@@ -16,7 +16,7 @@ This is an AI that **executes**. You send it a task via Telegram. It plans. It a
 YOU → Telegram → MCP Agent → OpenClaw → Your Hardware → Reports back to Telegram
 ```
 
-The agent has persistent memory, a defined identity, and elevated tool access you approve once. It runs 24/7. It monitors itself.
+The agent has persistent memory, a defined identity, and elevated tool access you approve once. It runs 24/7. It monitors itself. And it gets better every week — through operation, research, and direct tester feedback.
 
 ---
 
@@ -29,7 +29,7 @@ The agent has persistent memory, a defined identity, and elevated tool access yo
 | Human Interface | Telegram Bot | Commands, approvals, alerts |
 | Cockpit | Nerve UI | Agent control, workspace, kanban |
 | Dashboard | Bot-Review | Agents, models, sessions, stats at a glance |
-| Watchdog | Pi-4 + cron | Pings fleet every 5 min, alerts on failure |
+| Watchdog | Pi-4 + cron | Checks fleet endpoints every 5 min, alerts on failure |
 | Brain | .MD files | Soul, memory, identity — version-controlled |
 
 ---
@@ -49,9 +49,10 @@ Total cost: hardware you probably already have. Running cost: electricity.
 
 ## What It Can Do Right Now
 
-- Respond to commands in Telegram as a named agent (not "I am Qwen")
+- Respond to commands in Telegram as a named agent (MCP — not "I am Qwen")
+- Answer questions, brainstorm ideas, and analyze requests
 - Execute file operations, scripts, and system commands on approval
-- Monitor fleet health and alert you when machines go down
+- Monitor fleet health and alert you when services go down
 - Maintain persistent memory across sessions via .MD files
 - Display agent status, model usage, and session stats in a web dashboard
 
@@ -73,9 +74,10 @@ cd AlvaradoTech-MCP
 **Setup:**
 1. Copy `config/openclaw.template.json` to `~/.openclaw/openclaw.json`
 2. Fill in your bot token, Telegram user ID, and Ollama URL
-3. Copy `brain/` files to `~/.openclaw/workspace/`
-4. Run `openclaw gateway start`
-5. Message your bot: `who are you?`
+3. Copy `brain/workspace/` files to `~/.openclaw/workspace/`
+4. Create a custom Ollama model with adequate context: `ollama create mcp-qwen3 --from qwen3:8b`
+5. Run `openclaw gateway start`
+6. Message your bot: `who are you?`
 
 Full step-by-step: see [`docs/06_SEi_OPENCLAW_SETUP.md`](docs/06_SEi_OPENCLAW_SETUP.md)
 
@@ -88,11 +90,12 @@ Everything the agent knows about itself lives in `brain/`:
 | File | Purpose |
 |---|---|
 | `SOUL.md` | Who the agent is — identity, character, directives |
-| `MEMORY.md` | Persistent system state and lessons learned |
+| `MEMORY.md` | Persistent system state, decisions, and lessons learned |
 | `ROADMAP.md` | Build sequence — where we are and where we're going |
-| `LEARN.md` | Research protocols |
+| `LEARN.md` | Research protocols, model selection log, design pattern research |
+| `ARCHITECTURE.md` | Platform design principles and ATC mental model |
 
-These files are injected into the agent's context on every session. Edit them to make the agent yours.
+Runtime workspace files (what gets injected into every session) live in `brain/workspace/`. Edit them to make the agent yours.
 
 ---
 
@@ -105,7 +108,17 @@ Deploy `watchdog/watchdog.sh` to a Raspberry Pi (or any always-on machine):
 */5 * * * * /home/pi/watchdog.sh
 ```
 
-Pings your fleet every 5 minutes. Sends a Telegram alert if anything goes down.
+Checks Ollama API and OpenClaw gateway every 5 minutes. Sends a Telegram alert if any service is unreachable — not just if the machine pings.
+
+---
+
+## How This Platform Evolves
+
+This isn't a project that ships and stops. It gets better through use.
+
+Every session generates data. Every tester brings a real idea. Every research pass (Goose, context7, task-master-ai) surfaces patterns that get integrated. Lessons learned go into `brain/MEMORY.md`. Architecture decisions go into `docs/ARCHITECTURE.md`. The roadmap reflects what we've learned, not what we planned to learn.
+
+If you clone this, you're not getting a finished product. You're getting a foundation with a documented learning process. Fork it, build on it, and improve it the same way.
 
 ---
 
@@ -125,7 +138,7 @@ AI is not a product. It's an operating layer.
 
 The same insight that drove infrastructure shifts in enterprise IT applies here: the people who own the layer win. This repo is the foundation — a replicable base that anyone can clone, configure, and extend with their own ideas.
 
-Two testers are already building on it. Their ideas, executed by the stack.
+Testers are already building on it. Their ideas, executed by the stack.
 
 ---
 
@@ -133,8 +146,10 @@ Two testers are already building on it. Their ideas, executed by the stack.
 
 - Phase 0 — Foundation: ✅ Complete
 - Phase 1 — Cockpit & Visibility: ✅ Complete
-- Phase 2 — Home Office Network: In progress
-- Phase 3 — Initiative Expansion: Queued
+- Phase 1.5 — Platform Hardening: 🔄 In Progress
+- Phase 2 — Recipe System & Skills: Queued
+- Phase 3 — Home Office Network: Queued
+- Phase 4 — Initiative Expansion: Future
 
 ---
 
