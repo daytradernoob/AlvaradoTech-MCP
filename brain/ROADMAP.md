@@ -1,5 +1,5 @@
 # ROADMAP.md — The Build Sequence
-*Last Updated: 2026-04-03 | Version: 1.5*
+*Last Updated: 2026-04-03 | Version: 1.6*
 
 ---
 
@@ -69,19 +69,20 @@ Goal: MCP executes structured, repeatable workflows. First real skills installed
 
 | Task | Status | Notes |
 |---|---|---|
-| Hardware scout skill | ⬜ FIRST | eBay + Craigslist + r/hardwareswap search. First real skill. |
+| Account Gap Analyzer skill | ✅ DONE | Reads accounts + catalog, ranks by gap value, HIPAA/legal/financial flags → Telegram |
+| Business Q&A Engine skill | ✅ DONE | Natural language questions against account data — count/filter/lookup/aggregate/compliance |
+| LTG demo script | ✅ DONE | 10-min, 6-beat script. docs/LTG_DEMO_SCRIPT.md |
+| Computech/Padragm brief | ✅ DONE | Founder-level pitch prep. docs/COMPUTECH_BRIEF.md |
+| Hardware scout skill | ⬜ | eBay + Craigslist + r/hardwareswap search |
 | Base skill: system status report | ⬜ | Fleet health snapshot on demand |
 | Base skill: web fetch (sanitized) | ⬜ | HTTPS-only, no internal IP redirects |
-| Base skill: web search | ⬜ | Brave already live — formalize as skill |
-| Base skill: X/Twitter RSS reader | ⬜ | Read-only, no auth |
 | Recipe: daily digest | ⬜ | Fleet health + notable events → Telegram |
 | Recipe: idea workshop | ⬜ | Structured brainstorm → output doc |
-| Recipe: hardware scout (scheduled) | ⬜ | Daily scan for target hardware deals |
 
 ---
 
 ## Phase 3 — CUSTOMER PRODUCT V1
-**Status: QUEUED — Active development target**
+**Status: 🔄 IN PROGRESS — 2026-04-03**
 
 Goal: One paying customer on a managed install. Build the install experience and demo. Validate the business thesis with real money.
 
