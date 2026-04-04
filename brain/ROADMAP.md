@@ -1,5 +1,5 @@
 # ROADMAP.md — The Build Sequence
-*Last Updated: 2026-04-03 | Version: 1.6*
+*Last Updated: 2026-04-04 | Version: 1.7*
 
 ---
 
@@ -88,14 +88,16 @@ Goal: One paying customer on a managed install. Build the install experience and
 
 | Task | Status | Notes |
 |---|---|---|
-| Validated hardware SKU finalized | ⬜ | Mac Mini M4 Pro 48GB — "the box" |
-| Install guide: customer-facing | ⬜ | Sub-30 min. No JSON editing. |
+| Validated hardware SKU finalized | ✅ DONE | Mac Mini M4 Pro 48GB — $1,799. Documented. |
+| Install guide: customer-facing | ✅ DONE | docs/INSTALL_PLAYBOOK.md — sub-30 min, no JSON editing |
+| On-prem setup script | ✅ DONE | deploy/onprem-setup.sh — one command, Track A |
+| Demo script | ✅ DONE | Local: ~/.openclaw/workspace/docs/customers/ltg/ |
 | Brain file templates per vertical | ⬜ | Medical, legal, financial, SMB |
-| Demo script | ⬜ | 5 min. One use case. Clear value. |
-| First customer conversation | ⬜ | People already showing interest. Get one on a call. |
+| First customer conversation | ⬜ | LTG LinkedIn connect sent. Computech pending. |
 | First managed install | ⬜ | Rob installs + configures. Customer uses. |
 | Support model defined | ⬜ | Monthly retainer. What's included. |
 | Pricing model v1 | ⬜ | Hardware + install + monthly support |
+| VPS validation | ⬜ | Spin up Hetzner CX32, run vps-setup.sh end-to-end |
 
 ---
 
