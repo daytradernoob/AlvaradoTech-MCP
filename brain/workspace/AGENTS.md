@@ -63,6 +63,7 @@ When a user triggers a skill, read the skill file before executing. Do not impro
 | Skill | Trigger phrases | Recipe file |
 |---|---|---|
 | Account Gap Analyzer | "gap analysis" · "run gap" · "gap report" · "account gaps" | skills/gap-analyzer.md |
+| Business Q&A Engine | Natural language questions about accounts, services, revenue, risk | skills/business-qa.md |
 
 ---
 
