@@ -1,5 +1,5 @@
 # ROADMAP.md — The Build Sequence
-*Last Updated: 2026-04-03 | Version: 1.4*
+*Last Updated: 2026-04-03 | Version: 1.5*
 
 ---
 
@@ -54,8 +54,8 @@ Goal: Reliable enough to demo to a customer. Consistent behavior. No garbage out
 | Fix HEARTBEAT_OK false positives | ✅ DONE | Heartbeat removed from AGENTS.md |
 | Fix unauthorized file writes | ✅ DONE | Explicit no-write rule in AGENTS.md |
 | Watchdog v2 | ✅ DONE | Endpoint checks |
-| Context compaction layer | ⬜ NEXT | Auto-compress at 80% token capacity |
-| Tool inspection layer | ⬜ | Prevent unauthorized tool use |
+| Context compaction layer | ✅ DONE | SESSION.md working memory — injected every session, updated at milestones |
+| Tool inspection layer | ✅ DONE | 5-stage check in AGENTS.md before every tool call |
 | Per-tester isolated agents | ⬜ | OpenClaw multi-agent for tester onboarding |
 | Hardware upgrade | ⬜ | Mac Mini M4 Pro 48GB — validated SKU |
 | OpenClaw update to v2026.4.2 | ⬜ | Current: v2026.3.28 |

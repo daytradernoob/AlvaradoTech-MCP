@@ -1,5 +1,5 @@
 # MEMORY.md — Persistent Knowledge Base
-*Last Updated: 2026-04-03 | Version: 1.3*
+*Last Updated: 2026-04-03 | Version: 1.4*
 
 ---
 
@@ -64,6 +64,8 @@
 | 2026-04-02 | Telegram streaming set to off | Prevented double-response from partial message replays |
 | 2026-04-03 | mcp-qwen3 as primary model | Custom Ollama model: qwen3:8b base + num_ctx 8192. Fixes context truncation that caused garbage output. |
 | 2026-04-03 | Goose design patterns adopted as roadmap | Progressive context compaction, tool inspection, recipe system, SubTask dispatch — integrated into Phase 1.5 and Phase 2 planning |
+| 2026-04-03 | Context compaction implemented via SESSION.md | SESSION.md injected every session as working memory. Model updates it at milestones and references it when conversation gets long (20+ exchanges). Avoids context overflow. |
+| 2026-04-03 | Tool inspection added to AGENTS.md | 5-stage check: Authorized? Egress? Destructive? Repetition? Scope? Pause and ask user if any check fails. |
 
 ---
 
@@ -133,6 +135,7 @@ We improve this platform continuously through hands-on operation, external resea
 | 2026-04-03 | qwen3-4k had num_ctx 4096 and qwen3:8b defaulted to 2048. System prompt alone was 6k tokens. Context truncation caused garbage output ("I am MCP." only), random HEARTBEAT_OK responses, and unauthorized file writes. Always verify num_ctx against actual system prompt size. |
 | 2026-04-03 | AGENTS.md bloat (2135 words) confused local models. Trimmed to 556 words. Keep workspace files lean — smaller is more reliable for local inference. |
 | 2026-04-03 | OpenClaw injects a hardcoded session-start message: "greet the user… ask what they want to do." Workspace files must account for this specific prompt to override greeting behavior. |
+| 2026-04-03 | SESSION.md is a workspace file — it gets injected at session start like SOUL.md and AGENTS.md. Model updates it in-session. Cross-session continuity without increasing base context size. |
 
 ---
 
