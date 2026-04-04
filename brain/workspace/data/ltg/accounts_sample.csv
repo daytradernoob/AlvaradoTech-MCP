@@ -1,0 +1,21 @@
+Account_Name,State,Industry,Employee_Count,Active_Services,Notes
+Desert Sun Medical Group,AZ,Medical,22,Managed IT Support,HIPAA required. No security layer at all. No backup.
+Mesa Family Dental,AZ,Medical,8,Managed IT Support|Microsoft 365 Management,No security. No backup. HIPAA exposure.
+Scottsdale Smiles Orthodontics,AZ,Medical,12,Managed IT Support|Cloud Backup & Disaster Recovery,No security or HIPAA compliance layer.
+Southwest Legal Partners,AZ,Legal,18,Managed IT Support|Microsoft 365 Management|Network Monitoring & Management,No security. No backup. Privilege risk.
+Chandler Law Group,AZ,Legal,6,Managed IT Support,No email security. No backup. Smallest legal firm we support.
+RJA Financial Advisors,AZ,Financial,14,Managed IT Support|Network Monitoring & Management|Microsoft 365 Management,No security. No backup. SEC/FINRA exposure.
+Pinnacle Wealth Management,AZ,Financial,9,Managed IT Support|Cloud Backup & Disaster Recovery,No security. No compliance layer.
+BlueSky Construction,AZ,Construction,35,Managed IT Support|VoIP / Business Phone,Large headcount. No security. No backup. No M365 management.
+SunState Roofing,AZ,Construction,28,Managed IT Support,No security. No backup. No phone management.
+Valley Auto Group,AZ,Automotive,45,Managed IT Support|VoIP / Business Phone|Microsoft 365 Management,No security. No backup. Largest account by headcount in AZ.
+TechPath Solutions,AZ,Technology,20,Managed IT Support|Network Monitoring & Management|Microsoft 365 Management|Managed Security - Endpoint,No backup. No email security. Close to full coverage.
+Arcadia Veterinary Clinic,AZ,Medical,11,Managed IT Support|Microsoft 365 Management,No security. No backup. Compliance opportunity.
+Pacific Coast Realty,CA,Real Estate,30,Managed IT Support|Microsoft 365 Management,No security. No backup. Multi-office.
+Bay Area Urgent Care,CA,Medical,19,Managed IT Support|Cloud Backup & Disaster Recovery,No security. HIPAA exposure. CA market.
+Coastal Accounting Group,CA,Financial,16,Managed IT Support|Network Monitoring & Management,No security. No backup. SEC/FINRA exposure.
+Nevada Gaming Supply Co,NV,Retail,25,Managed IT Support|VoIP / Business Phone,No security. No backup. Regulatory exposure in gaming adjacent industry.
+Reno Medical Billing,NV,Medical,14,Managed IT Support|Microsoft 365 Management|Cloud Backup & Disaster Recovery,No security. HIPAA. Has backup — good. Missing security + compliance.
+Austin Software Labs,TX,Technology,40,Managed IT Support|Network Monitoring & Management|Microsoft 365 Management|Managed Security - Endpoint|Dark Web Monitoring,Best-covered account. Missing email security and backup. SOC2 candidate.
+Lone Star Oral Surgery,TX,Medical,17,Managed IT Support,Worst-covered medical account. Nothing beyond basic IT support. HIPAA critical.
+DFW Property Management,TX,Real Estate,22,Managed IT Support|VoIP / Business Phone|Microsoft 365 Management,No security. No backup. Multi-property operations.

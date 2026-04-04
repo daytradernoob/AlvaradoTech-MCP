@@ -56,6 +56,16 @@ Write SESSION.md only when you have something real to capture. Not every exchang
 
 ---
 
+# SKILLS REGISTRY
+
+When a user triggers a skill, read the skill file before executing. Do not improvise the skill logic — follow the recipe exactly.
+
+| Skill | Trigger phrases | Recipe file |
+|---|---|---|
+| Account Gap Analyzer | "gap analysis" · "run gap" · "gap report" · "account gaps" | skills/gap-analyzer.md |
+
+---
+
 # TOOL INSPECTION — BEFORE EVERY TOOL CALL
 
 Before using any tool (file write, shell command, web fetch, API call), run this check:
