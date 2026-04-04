@@ -1,5 +1,5 @@
 # SKILL: Business Q&A Engine
-*Version 1.0 | LTG — Leverage Technology Group*
+*Version 1.0 | MSP Account Intelligence*
 
 ## Trigger
 Any natural language question about accounts, services, revenue, coverage, or customers.
@@ -22,9 +22,10 @@ If unsure whether a question is meant for this skill vs the gap analyzer: use th
 
 ## Data Sources
 
-Always read fresh from file — do not rely on memory of previous reads:
-- `data/ltg/accounts_sample.csv` — 20 accounts with current services and notes
-- `data/ltg/service_catalog.csv` — full service catalog with pricing
+Always read fresh from file — do not rely on memory of previous reads.
+Check for customer-specific data first, fall back to sample:
+- `data/customer/accounts.csv` (if exists) OR `data/msp_sample/accounts_sample.csv`
+- `data/customer/service_catalog.csv` (if exists) OR `data/msp_sample/service_catalog.csv`
 
 ---
 

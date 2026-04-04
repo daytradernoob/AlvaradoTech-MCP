@@ -18,3 +18,9 @@ Thumbs.db
 
 # VPS deploy secrets
 deploy/.env
+
+# Customer data — never commit
+# Real account data, demo scripts, prospect notes go here (local only)
+brain/workspace/data/customer/
+docs/customers/
+docs/prospects/

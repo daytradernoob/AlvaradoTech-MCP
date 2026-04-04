@@ -1,5 +1,5 @@
 # SKILL: Account Gap Analyzer
-*Version 1.0 | LTG — Leverage Technology Group*
+*Version 1.0 | MSP Account Intelligence*
 
 ## Trigger
 User says any of: "gap analysis", "run gap", "gap report", "account gaps"
@@ -16,11 +16,11 @@ Reads LTG's account list and service catalog. Cross-references to find which acc
 
 **Step 1 — Load data**
 
-Read both files:
-- `data/ltg/accounts_sample.csv` — active accounts and their current services
-- `data/ltg/service_catalog.csv` — full service catalog with monthly pricing
+Read both files. Check for customer-specific data first, fall back to sample:
+- `data/customer/accounts.csv` (if exists) OR `data/msp_sample/accounts_sample.csv`
+- `data/customer/service_catalog.csv` (if exists) OR `data/msp_sample/service_catalog.csv`
 
-If either file is missing, report: "Gap Analyzer: data file not found. Expected: data/ltg/accounts_sample.csv and data/ltg/service_catalog.csv"
+If no data files found, report: "Gap Analyzer: no data files found. Expected: data/customer/accounts.csv or data/msp_sample/accounts_sample.csv"
 
 **Step 2 — Score each account**
 
@@ -84,7 +84,7 @@ If user says "gap by industry [X]": filter accounts by that industry, same top-5
 - Active_Services uses pipe `|` as separator
 - $0 services (cabling, hardware, assessments) are opportunities to note but excluded from gap value calculation
 - Compliance services (HIPAA, SOC2) are included in gap value only if industry matches
-- This sample has 20 accounts. Production will have 1,500.
+- Sample data is in data/msp_sample/. Real customer data goes in data/customer/ (local only, not in repo).
 
 ---
 

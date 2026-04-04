@@ -112,29 +112,27 @@ Both tracks run the same codebase. Same SOUL.md, same AGENTS.md, same Telegram i
 
 ---
 
-## First Customer: Leverage Technology Group (LTG)
-*Scottsdale, AZ | ltgaz.com*
+## First Customer: Phoenix-Area MSP
+*Boutique technology services company — IT, security, AV, telecom, cabling.*
 
-**Who they are:** Boutique technology services company. IT, security, AV, telecom, cabling. Founded 1999. 8-11 employees. 1,500+ customers. Arizona, California, Nevada, Texas.
+**Profile:** Small team (< 15). 1,000+ customers across multiple states. Differentiation is personalized service — which doesn't scale at that ratio.
 
-**The tension:** Their differentiation — personalized, educated, customized service — doesn't scale at an 8-person / 1,500-customer ratio. Back office is the bottleneck: proposals, account review, gap analysis, documentation, partner solution mapping.
+**The tension:** Back office is the bottleneck. Proposals, account review, gap analysis, documentation, partner solution mapping — all manual, all time-consuming.
 
 **What MCP does for them:**
 
 | Problem | MCP Solution |
 |---|---|
-| "Are we using the right tools?" | Business analysis engine — ingests current toolset, identifies gaps, recommends changes |
-| "Do we have gaps in our offerings?" | Scans 1,500 accounts against service catalog — surfaces upsell opportunities |
+| "Do we have gaps in our offerings?" | Scans accounts against service catalog — surfaces upsell opportunities |
 | Proposals take half a day | First draft in minutes. Human refines. |
-| Client education is time-intensive | MCP generates client-specific education content |
 | Partner solutions live in people's heads | MCP maps every partner offering and how they connect to maximize MRR |
 | "Are we managing correctly?" | Department efficiency analysis — objective view the owner can't get from inside |
 
-**The "3 to 30" math:** 3 back office people stop doing volume work (analysis, documentation, research, proposals). They do only judgment and relationship work. Effective output multiplies 3-5x. For 1,500 customers across 4 states, that's transformative.
+**The "3 to 30" math:** 3 back office people stop doing volume work. They do only judgment and relationship work. Effective output multiplies 3-5x.
 
-**The reseller angle:** LTG serves 1,500 SMB customers. If LTG embeds MCP as part of their managed services offering — every client gets an AI operating layer. LTG manages it. LTG charges for it. Rob's first customer becomes Rob's first distribution channel.
+**The reseller angle:** If this MSP embeds MCP in their managed services offering — every client gets an AI operating layer. They manage it. They charge for it. First customer becomes first distribution channel.
 
-This is the business model proof point. LTG is not just a customer. LTG is the case study that opens every door in the MSP/VAR market.
+This is the business model proof point. The first MSP customer is the case study that opens every door in the MSP/VAR market.
 
 ---
 
