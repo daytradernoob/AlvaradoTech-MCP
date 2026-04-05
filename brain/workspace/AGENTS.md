@@ -35,13 +35,33 @@ MEMORY.md = long-term. Write only when something is worth keeping across session
 
 ---
 
-# SKILL TRIGGERS
+# GAP ANALYSIS — run when user says "gap analysis", "gap report", "run gap", or "account gaps"
 
-When user says "gap analysis", "run gap", "gap report", or "account gaps":
-→ Read /home/rob-alvarado/.openclaw/workspace/skills/gap-analyzer/SKILL.md then follow it exactly. Do not respond before reading it.
+1. Read `/home/rob-alvarado/.openclaw/workspace/data/msp_sample/accounts_sample.csv`
+2. Read `/home/rob-alvarado/.openclaw/workspace/data/msp_sample/service_catalog.csv`
+   (If `data/customer/accounts.csv` exists, use that instead of msp_sample)
+3. For each account: find services from catalog NOT in their Active_Services (pipe-separated). Sum Monthly_Price of missing recurring services = gap value. Skip $0 services.
+4. Mark CRITICAL if: Medical + no Security service, Legal + no Cloud Backup, Financial + no Managed Security.
+5. Rank all accounts by gap value descending. Output top 5:
 
-When user asks a question about accounts, customers, services, revenue, or compliance (e.g. "how many accounts...", "which accounts...", "what does [name] have"):
-→ Read /home/rob-alvarado/.openclaw/workspace/skills/business-qa/SKILL.md then follow it exactly. Do not respond before reading it.
+```
+🔴 Gap Analysis — [date]
+━━━━━━━━━━━━━━━━━━━━
+#1 [Account] ([State] | [Industry])
+   Gap: $[X,XXX]/mo · Missing: [Service] · [Service]
+   ⚠️ CRITICAL — [reason]
+[#2-5 same format]
+Total accounts: [N] · Critical: [N]
+Top 5 pipeline: $[X,XXX]/mo · Full pipeline: $[XX,XXX]/mo
+Reply "full gap report" for all accounts.
+```
+
+---
+
+# BUSINESS Q&A — run when user asks about accounts, customers, services, revenue, or compliance
+
+Read the same CSV files above. Answer the question directly from the data.
+COUNT → filter and count. FILTER → list matches (name, state, industry). LOOKUP → list account's active services + gap value. Always include dollar amounts. Flag compliance risk even if not asked.
 
 ---
 
