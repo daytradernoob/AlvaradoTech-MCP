@@ -1,5 +1,5 @@
 # ROADMAP.md — The Build Sequence
-*Last Updated: 2026-04-04 | Version: 1.7*
+*Last Updated: 2026-04-04 | Version: 1.8*
 
 ---
 
@@ -56,23 +56,26 @@ Goal: Reliable enough to demo to a customer. Consistent behavior. No garbage out
 | Watchdog v2 | ✅ DONE | Endpoint checks |
 | Context compaction layer | ✅ DONE | SESSION.md working memory — injected every session, updated at milestones |
 | Tool inspection layer | ✅ DONE | 5-stage check in AGENTS.md before every tool call |
+| OpenClaw update to v2026.4.2 | ✅ DONE | 2026-04-04. Breaking changes: BOOTSTRAP.md required, skill format changed, model whitelist enforced |
+| 91/9 public/private data split | ✅ DONE | 2026-04-04. Engine public, customer data stays local. gitignore enforced. |
+| Pre-computed gap analysis pattern | ✅ DONE | 2026-04-04. Python script → gap_analysis_result.md. Solves 8k context budget on small models. |
+| Hardware ceiling identified | ✅ DONE | 2026-04-04. RTX 3060 = 8b model max. 14b partial VRAM offload. Mac Mini M4 Pro is production engine. |
 | Per-tester isolated agents | ⬜ | OpenClaw multi-agent for tester onboarding |
-| Hardware upgrade | ⬜ | Mac Mini M4 Pro 48GB — validated SKU |
-| OpenClaw update to v2026.4.2 | ⬜ | Current: v2026.3.28 |
+| Hardware upgrade | ⬜ | Mac Mini M4 Pro 48GB — $1,799. Unblocks 32b model, dynamic Q&A, real instruction following. |
 
 ---
 
 ## Phase 2 — SKILLS & RECIPES
-**Status: QUEUED**
+**Status: 🔄 IN PROGRESS — 2026-04-04**
 
 Goal: MCP executes structured, repeatable workflows. First real skills installed. Platform demonstrates value to a non-technical observer.
 
 | Task | Status | Notes |
 |---|---|---|
-| Account Gap Analyzer skill | ✅ DONE | Reads accounts + catalog, ranks by gap value, HIPAA/legal/financial flags → Telegram |
-| Business Q&A Engine skill | ✅ DONE | Natural language questions against account data — count/filter/lookup/aggregate/compliance |
-| LTG demo script | ✅ DONE | 10-min, 6-beat script. docs/LTG_DEMO_SCRIPT.md |
-| Computech/Padragm brief | ✅ DONE | Founder-level pitch prep. docs/COMPUTECH_BRIEF.md |
+| Account Gap Analyzer skill | ✅ DONE | Pre-computed pattern. Python script → gap_analysis_result.md → Telegram. Works on 8b/14b. |
+| Business Q&A Engine skill | 🔄 PARTIAL | Skill registered. Short Q&A works on 14b. Dynamic multi-account queries need Mac Mini (32b). |
+| LTG demo script | ✅ DONE | 10-min, 6-beat script. Local: docs/customers/ltg/ |
+| Computech/Padragm brief | ✅ DONE | Founder-level pitch prep. Local: docs/prospects/ |
 | Hardware scout skill | ⬜ | eBay + Craigslist + r/hardwareswap search |
 | Base skill: system status report | ⬜ | Fleet health snapshot on demand |
 | Base skill: web fetch (sanitized) | ⬜ | HTTPS-only, no internal IP redirects |
@@ -97,7 +100,10 @@ Goal: One paying customer on a managed install. Build the install experience and
 | First managed install | ⬜ | Rob installs + configures. Customer uses. |
 | Support model defined | ⬜ | Monthly retainer. What's included. |
 | Pricing model v1 | ⬜ | Hardware + install + monthly support |
-| VPS validation | ⬜ | Spin up Hetzner CX32, run vps-setup.sh end-to-end |
+| VPS validation | ⬜ | Spin up Hetzner CX32, Docker + OpenRouter. Track B delivery path. |
+| Docker deployment (Track B) | ⬜ | docker-compose for multi-tenant VPS. One container per customer. |
+| Pricing model v1 | ⬜ | On-Prem: hardware + install + retainer. Cloud: S/M/L monthly subscription. |
+| Support model defined | ⬜ | What monthly retainer covers. SLA. Escalation path. |
 
 ---
 
