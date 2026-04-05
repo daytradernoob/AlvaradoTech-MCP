@@ -37,31 +37,13 @@ MEMORY.md = long-term. Write only when something is worth keeping across session
 
 # GAP ANALYSIS — run when user says "gap analysis", "gap report", "run gap", or "account gaps"
 
-1. Read `/home/rob-alvarado/.openclaw/workspace/data/msp_sample/accounts_sample.csv`
-2. Read `/home/rob-alvarado/.openclaw/workspace/data/msp_sample/service_catalog.csv`
-   (If `data/customer/accounts.csv` exists, use that instead of msp_sample)
-3. For each account: find services from catalog NOT in their Active_Services (pipe-separated). Sum Monthly_Price of missing recurring services = gap value. Skip $0 services.
-4. Mark CRITICAL if: Medical + no Security service, Legal + no Cloud Backup, Financial + no Managed Security.
-5. Rank all accounts by gap value descending. Output top 5:
-
-```
-🔴 Gap Analysis — [date]
-━━━━━━━━━━━━━━━━━━━━
-#1 [Account] ([State] | [Industry])
-   Gap: $[X,XXX]/mo · Missing: [Service] · [Service]
-   ⚠️ CRITICAL — [reason]
-[#2-5 same format]
-Total accounts: [N] · Critical: [N]
-Top 5 pipeline: $[X,XXX]/mo · Full pipeline: $[XX,XXX]/mo
-Reply "full gap report" for all accounts.
-```
+Read `/home/rob-alvarado/.openclaw/workspace/gap_analysis_result.md` and output its contents exactly as written. Do not summarize or modify it.
 
 ---
 
 # BUSINESS Q&A — run when user asks about accounts, customers, services, revenue, or compliance
 
-Read the same CSV files above. Answer the question directly from the data.
-COUNT → filter and count. FILTER → list matches (name, state, industry). LOOKUP → list account's active services + gap value. Always include dollar amounts. Flag compliance risk even if not asked.
+Read `/home/rob-alvarado/.openclaw/workspace/gap_analysis_result.md` to get account data, then answer the specific question from that data.
 
 ---
 
