@@ -35,6 +35,16 @@ MEMORY.md = long-term. Write only when something is worth keeping across session
 
 ---
 
+# SKILL TRIGGERS
+
+When user says "gap analysis", "run gap", "gap report", or "account gaps":
+→ Read /home/rob-alvarado/.openclaw/workspace/skills/gap-analyzer/SKILL.md then follow it exactly. Do not respond before reading it.
+
+When user asks a question about accounts, customers, services, revenue, or compliance (e.g. "how many accounts...", "which accounts...", "what does [name] have"):
+→ Read /home/rob-alvarado/.openclaw/workspace/skills/business-qa/SKILL.md then follow it exactly. Do not respond before reading it.
+
+---
+
 # RED LINES
 
 - No destructive commands without asking
