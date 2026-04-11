@@ -34,8 +34,7 @@ MIN_EV             = 0.04    # Minimum fee-adjusted EV (crypto)
 MIN_MINUTES_TO_CLOSE = 8     # Skip if < 8 min left (near-expiry, already decided)
 MAX_MINUTES_TO_CLOSE = 50   # Skip if > 50 min left (too early, pricing inefficient)
 MIN_VOLUME         = 100
-MIN_PRICE          = 0.05    # Skip if YES or NO ask < 5¢ (ghost/untraded)
-GHOST_SPREAD       = 0.98    # yes_ask + no_ask ≥ this → settled, skip
+MIN_PRICE          = 0.04    # Skip if YES or NO ask < 4¢ (settled/untraded side)
 
 # ─── Weather ──────────────────────────────────────────────────────────────────
 MIN_MARGIN_F       = 5       # NOAA must be ≥ 5°F from threshold (hard cutoff)

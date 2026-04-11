@@ -22,7 +22,7 @@ from pnb_config import (
     CRYPTO_SERIES, LOOP_INTERVAL_S, BECKER_YES_CEILING, BECKER_YES_FLOOR,
     MOMENTUM_LOOKBACK_BARS, MOMENTUM_BEARISH_THRESH, MOMENTUM_BULLISH_THRESH,
     SKEW_NO_CONFIRM, KALSHI_FEE_RATE, MIN_EV, MIN_MINUTES_TO_CLOSE,
-    MIN_VOLUME, MIN_PRICE, GHOST_SPREAD, HALT_BELOW_CENTS,
+    MIN_VOLUME, MIN_PRICE, HALT_BELOW_CENTS,
     KELLY_FRACTION, KELLY_MAX_CONTRACTS, KELLY_MIN_CONTRACTS,
     MAX_MINUTES_TO_CLOSE,
 )
@@ -226,13 +226,6 @@ def scan_once(dry_run, balance_cents):
     yes_ask = float(market.get("yes_ask_dollars") or 0)
     no_ask  = float(market.get("no_ask_dollars") or 0)
     volume  = float(market.get("volume_fp") or 0)
-    close_s = market.get("close_time", "")[:19]
-
-    # Ghost market filter (settled contracts show near-zero spread)
-    if yes_ask + no_ask >= GHOST_SPREAD:
-        log.info(f"Ghost market detected {ticker} (spread={yes_ask+no_ask:.2f}) — skipping")
-        return
-
     # Min price / liquidity filters
     if yes_ask < MIN_PRICE or no_ask < MIN_PRICE:
         log.info(f"Untraded {ticker} (yes=${yes_ask:.2f} no=${no_ask:.2f}) — skipping")
@@ -243,7 +236,7 @@ def scan_once(dry_run, balance_cents):
 
     # Time-to-close filter
     try:
-        close_dt = datetime.fromisoformat(close_s.replace("Z", "+00:00"))
+        close_dt = datetime.fromisoformat(market.get("close_time", "").replace("Z", "+00:00"))
         minutes_left = (close_dt - now).total_seconds() / 60
     except Exception:
         minutes_left = 999
