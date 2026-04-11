@@ -4,7 +4,7 @@ Sent to Telegram daily at 8AM and on demand.
 """
 import json, os
 from datetime import date
-import pnb_auth, pnb_state, pnb_telegram, pnb_learn
+import pnb_auth, pnb_state, pnb_telegram, pnb_learn, pnb_paper
 
 TARGET_CENTS = 5000
 
@@ -25,10 +25,17 @@ def run():
         for ticker, info in raw.get("held", {}).items():
             held_lines.append(f"  {ticker} | {info['side']} @ ${info['price']:.2f}")
 
+    # Paper trade settlement check + summary
+    pnb_paper.check_settlements()
+    paper = pnb_paper.summary()
+
     # Learning analysis
     analysis = pnb_learn.analyze()
     w = analysis["weather"]
     c = analysis["crypto"]
+
+    win_rate_str = f"{paper['win_rate']:.0%}" if paper['win_rate'] is not None else "n/a"
+    pnl_str = f"${paper['total_pnl']:+.2f}" if paper['wins'] + paper['losses'] > 0 else "$0.00"
 
     lines = [
         f"PNB Daily Report -- {date.today()}",
@@ -36,6 +43,10 @@ def run():
         f"Balance:  ${balance_cents/100:.2f}  /  Target: ${TARGET_CENTS/100:.2f}  ({pct:.1f}%)",
         f"Mode:     {mode}",
         f"Record:   {s['wins']}W / {s['losses']}L / {s['pending']} pending",
+        f"",
+        f"-- DRY-RUN PAPER RECORD --",
+        f"  {paper['wins']}W / {paper['losses']}L / {paper['pending']} pending",
+        f"  Win rate: {win_rate_str}  |  P&L: {pnl_str}",
         "",
         f"Positions: {s['held_count']} held",
     ]

@@ -16,7 +16,7 @@ Runs: 9AM, 12PM, 3PM MST (cron)
 import json, re, logging
 from datetime import date, datetime, timedelta
 import requests
-import pnb_auth, pnb_state, pnb_telegram, pnb_learn
+import pnb_auth, pnb_state, pnb_telegram, pnb_learn, pnb_paper
 from pnb_config import (
     MIN_MARGIN_F, UNCERTAINTY_MARGIN_FULL, UNCERTAINTY_EV_BUFFER,
     MIN_HIST_RATE, MIN_EV_WEATHER, KALSHI_FEE_RATE,
@@ -199,6 +199,10 @@ def run():
 
     log.info(f"=== Weather scan v2 | {datetime.now().strftime('%Y-%m-%d %H:%M')} | {'DRY-RUN' if dry_run else 'LIVE'} ===")
 
+    # Check outcomes of any pending paper trades from previous scans
+    if dry_run:
+        pnb_paper.check_settlements()
+
     bal_r = pnb_auth.get("/portfolio/balance")
     if bal_r.status_code != 200:
         log.error(f"Balance check failed: {bal_r.text[:100]}")
@@ -319,8 +323,12 @@ def run():
             )
 
             ok, order_id, msg = place_order(ticker, trade_side, trade_ask, contracts, dry_run)
-            if ok and order_id != "DRY-RUN":
-                pnb_state.record_buy(ticker, trade_side, trade_ask, contracts, order_id)
+            if ok:
+                if order_id == "DRY-RUN":
+                    pnb_paper.record(ticker, trade_side, trade_ask, contracts,
+                                     f"WEATHER-{trade_side.upper()}", m.get("close_time", ""))
+                else:
+                    pnb_state.record_buy(ticker, trade_side, trade_ask, contracts, order_id)
             results.append({
                 "ticker": ticker, "side": trade_side, "ask": trade_ask,
                 "ev": ev, "contracts": contracts, "order_id": order_id, "ok": ok

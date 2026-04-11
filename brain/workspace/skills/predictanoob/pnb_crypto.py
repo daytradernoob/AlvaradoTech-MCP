@@ -17,7 +17,7 @@ from datetime import datetime, timezone, timedelta
 import yfinance as yf
 import numpy as np
 
-import pnb_auth, pnb_state, pnb_telegram, pnb_learn
+import pnb_auth, pnb_state, pnb_telegram, pnb_learn, pnb_paper
 from pnb_config import (
     CRYPTO_SERIES, LOOP_INTERVAL_S, BECKER_YES_CEILING, BECKER_YES_FLOOR,
     MOMENTUM_LOOKBACK_BARS, MOMENTUM_BEARISH_THRESH, MOMENTUM_BULLISH_THRESH,
@@ -198,6 +198,10 @@ def place_order(ticker, side, price_dollars, count, dry_run):
 def scan_once(dry_run, balance_cents):
     now = datetime.now(timezone.utc)
 
+    # Check outcomes of any pending paper trades
+    if dry_run:
+        pnb_paper.check_settlements()
+
     # Fetch open KXBTC15M markets
     r = pnb_auth.get("/markets", params={"series_ticker": CRYPTO_SERIES, "limit": 5, "status": "open"})
     if r.status_code != 200:
@@ -301,8 +305,12 @@ def scan_once(dry_run, balance_cents):
 
     # ── Execute ───────────────────────────────────────────────────────────
     ok, order_id, msg = place_order(ticker, becker_side, becker_ask, contracts, dry_run)
-    if ok and order_id != "DRY-RUN":
-        pnb_state.record_buy(ticker, becker_side, becker_ask, contracts, order_id)
+    if ok:
+        if order_id == "DRY-RUN":
+            pnb_paper.record(ticker, becker_side, becker_ask, contracts, becker_signal,
+                             market.get("close_time", ""))
+        else:
+            pnb_state.record_buy(ticker, becker_side, becker_ask, contracts, order_id)
         pnb_learn.record_crypto_price(ticker, yes_ask, no_ask, minutes_left, becker_signal)
 
     mode_tag = "[DRY-RUN] " if dry_run else ""
