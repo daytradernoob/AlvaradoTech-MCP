@@ -24,6 +24,7 @@ from pnb_config import (
     SKEW_NO_CONFIRM, KALSHI_FEE_RATE, MIN_EV, MIN_MINUTES_TO_CLOSE,
     MIN_VOLUME, MIN_PRICE, GHOST_SPREAD, HALT_BELOW_CENTS,
     KELLY_FRACTION, KELLY_MAX_CONTRACTS, KELLY_MIN_CONTRACTS,
+    MAX_MINUTES_TO_CLOSE,
 )
 
 LOG_PATH = "/home/rob-alvarado/RJA/.pnb/pnb_crypto.log"
@@ -248,6 +249,9 @@ def scan_once(dry_run, balance_cents):
         minutes_left = 999
     if minutes_left < MIN_MINUTES_TO_CLOSE:
         log.info(f"Near expiry {ticker} ({minutes_left:.1f}min) — waiting for next window")
+        return
+    if minutes_left > MAX_MINUTES_TO_CLOSE:
+        log.info(f"Too early {ticker} ({minutes_left:.1f}min) — pricing inefficient, skipping")
         return
 
     log.info(f"Evaluating {ticker} | YES=${yes_ask:.2f} NO=${no_ask:.2f} | {minutes_left:.0f}min | vol={volume:.0f}")
