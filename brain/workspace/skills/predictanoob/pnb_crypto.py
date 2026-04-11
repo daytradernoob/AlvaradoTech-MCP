@@ -22,7 +22,8 @@ from pnb_config import (
     CRYPTO_SERIES, LOOP_INTERVAL_S, BECKER_YES_CEILING, BECKER_YES_FLOOR,
     MOMENTUM_LOOKBACK_BARS, MOMENTUM_BEARISH_THRESH, MOMENTUM_BULLISH_THRESH,
     SKEW_NO_CONFIRM, KALSHI_FEE_RATE, MIN_EV, MIN_MINUTES_TO_CLOSE,
-    MIN_VOLUME, MIN_PRICE, GHOST_SPREAD, MAX_CONTRACTS, HALT_BELOW_CENTS
+    MIN_VOLUME, MIN_PRICE, GHOST_SPREAD, HALT_BELOW_CENTS,
+    KELLY_FRACTION, KELLY_MAX_CONTRACTS, KELLY_MIN_CONTRACTS,
 )
 
 LOG_PATH = "/home/rob-alvarado/RJA/.pnb/pnb_crypto.log"
@@ -108,6 +109,24 @@ def orderbook_skew(ticker):
     except Exception as e:
         log.warning(f"Orderbook error: {e}")
         return None
+
+
+# ─── Kelly Sizing ─────────────────────────────────────────────────────────────
+
+def kelly_contracts(win_prob, ask_dollars, balance_cents):
+    """Fractional binary Kelly capped at KELLY_MAX_CONTRACTS."""
+    if ask_dollars <= 0 or ask_dollars >= 1:
+        return KELLY_MIN_CONTRACTS
+    fee    = KALSHI_FEE_RATE * ask_dollars * (1.0 - ask_dollars)
+    profit = (1.0 - ask_dollars) - fee
+    loss   = ask_dollars + fee
+    b = profit / loss
+    if b <= 0:
+        return KELLY_MIN_CONTRACTS
+    f = max(0.0, (win_prob * (b + 1) - 1) / b) * KELLY_FRACTION
+    dollar_amount = f * (balance_cents / 100)
+    contracts = max(KELLY_MIN_CONTRACTS, round(dollar_amount / ask_dollars))
+    return min(contracts, KELLY_MAX_CONTRACTS)
 
 
 # ─── EV: Fee-Aware ────────────────────────────────────────────────────────────
@@ -271,28 +290,29 @@ def scan_once(dry_run, balance_cents):
         log.info("Orderbook unavailable — proceeding without skew confirmation")
 
     # ── EV Check ─────────────────────────────────────────────────────────
-    ev, fee = fee_adjusted_ev(win_prob, becker_ask, MAX_CONTRACTS)
+    contracts = kelly_contracts(win_prob, becker_ask, balance_cents)
+    ev, fee = fee_adjusted_ev(win_prob, becker_ask, contracts)
     if ev < MIN_EV:
         log.info(f"EV {ev:.1%} (fee=${fee:.3f}) below {MIN_EV:.0%} minimum — skipping")
         return
 
+    skew_str = f"{skew:.2f}" if skew is not None else "N/A"
     log.info(
-        f"ALL SIGNALS ALIGN: {becker_signal} | momentum={momentum_dir} | "
-        f"skew={skew:.2f if skew else 'N/A'} | win_prob={win_prob:.0%} | EV={ev:.1%} (fee=${fee:.3f})"
+        f"ALL SIGNALS ALIGN: {becker_signal} | momentum={momentum_dir} | skew={skew_str} | "
+        f"win_prob={win_prob:.0%} | EV={ev:.1%} (fee=${fee:.3f}) | kelly={contracts}c"
     )
 
     # ── Execute ───────────────────────────────────────────────────────────
-    ok, order_id, msg = place_order(ticker, becker_side, becker_ask, MAX_CONTRACTS, dry_run)
+    ok, order_id, msg = place_order(ticker, becker_side, becker_ask, contracts, dry_run)
     if ok and order_id != "DRY-RUN":
-        pnb_state.record_buy(ticker, becker_side, becker_ask, MAX_CONTRACTS, order_id)
+        pnb_state.record_buy(ticker, becker_side, becker_ask, contracts, order_id)
         pnb_learn.record_crypto_price(ticker, yes_ask, no_ask, minutes_left, becker_signal)
 
     mode_tag = "[DRY-RUN] " if dry_run else ""
     status   = "PLACED" if ok else "FAILED"
-    skew_str = f"{skew:.2f}" if skew is not None else "N/A"
     pnb_telegram.send(
         f"{mode_tag}PNB Crypto — {datetime.now().strftime('%H:%M MST')}\n"
-        f"  {status} {ticker} {becker_side.upper()} @ ${becker_ask:.2f}\n"
+        f"  {status} {ticker} {becker_side.upper()} x{contracts} @ ${becker_ask:.2f}\n"
         f"  Signal: {becker_signal} | Momentum: {momentum_dir} | Skew: {skew_str}\n"
         f"  win_est={win_prob:.0%} | EV={ev:.0%} | fee=${fee:.3f}\n"
         f"Balance: ${balance_cents/100:.2f}"
