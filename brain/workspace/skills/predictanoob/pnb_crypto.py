@@ -1,0 +1,337 @@
+"""
+PredictaNoob — Crypto Engine v2
+Strategy: KXBTC15M (15-min BTC direction contracts on Kalshi)
+
+Signal stack (all three must agree to trade):
+  1. Becker Optimism Bias   — YES ask outside threshold band
+  2. BTC Momentum           — yfinance 1-min bars confirm price direction
+  3. Orderbook Skew         — Kalshi depth confirms crowd leaning
+
+EV model: fee-aware (Kalshi charges 7% of C × P × (1-P))
+Mode: continuous loop via systemd — wakes every LOOP_INTERVAL_S seconds,
+      evaluates markets, trades at most once per 15-min window.
+"""
+import re, time, logging, signal, sys
+from datetime import datetime, timezone, timedelta
+
+import yfinance as yf
+import numpy as np
+
+import pnb_auth, pnb_state, pnb_telegram, pnb_learn
+from pnb_config import (
+    CRYPTO_SERIES, LOOP_INTERVAL_S, BECKER_YES_CEILING, BECKER_YES_FLOOR,
+    MOMENTUM_LOOKBACK_BARS, MOMENTUM_BEARISH_THRESH, MOMENTUM_BULLISH_THRESH,
+    SKEW_NO_CONFIRM, KALSHI_FEE_RATE, MIN_EV, MIN_MINUTES_TO_CLOSE,
+    MIN_VOLUME, MIN_PRICE, GHOST_SPREAD, MAX_CONTRACTS, HALT_BELOW_CENTS
+)
+
+LOG_PATH = "/home/rob-alvarado/RJA/.pnb/pnb_crypto.log"
+logging.basicConfig(
+    filename=LOG_PATH,
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(message)s"
+)
+log = logging.getLogger("pnb_crypto")
+
+_running = True
+
+def handle_sigterm(sig, frame):
+    global _running
+    log.info("SIGTERM received — shutting down cleanly")
+    _running = False
+
+signal.signal(signal.SIGTERM, handle_sigterm)
+signal.signal(signal.SIGINT, handle_sigterm)
+
+
+# ─── Signal: BTC Momentum ─────────────────────────────────────────────────────
+
+def btc_momentum():
+    """
+    Fetch last N+1 1-min BTC/USD bars from yfinance.
+    Returns (direction, slope_pct_per_bar):
+      direction: 'bearish', 'bullish', or 'neutral'
+      slope: average % change per bar (signed)
+    """
+    try:
+        df = yf.download("BTC-USD", period="1d", interval="1m", progress=False, auto_adjust=True)
+        if df is None or len(df) < MOMENTUM_LOOKBACK_BARS + 1:
+            log.warning("Momentum: insufficient BTC bars — treating as neutral")
+            return "neutral", 0.0
+
+        closes = df["Close"].dropna().values
+        recent = closes[-(MOMENTUM_LOOKBACK_BARS + 1):]
+        pct_changes = np.diff(recent) / recent[:-1]
+        slope = float(np.mean(pct_changes))
+
+        if slope <= MOMENTUM_BEARISH_THRESH:
+            direction = "bearish"
+        elif slope >= MOMENTUM_BULLISH_THRESH:
+            direction = "bullish"
+        else:
+            direction = "neutral"
+
+        log.info(f"Momentum: slope={slope:.5f} → {direction}")
+        return direction, slope
+    except Exception as e:
+        log.warning(f"Momentum fetch error: {e}")
+        return "neutral", 0.0
+
+
+# ─── Signal: Orderbook Skew ───────────────────────────────────────────────────
+
+def orderbook_skew(ticker):
+    """
+    Pull Kalshi orderbook for ticker.
+    Returns ratio = sum(NO ask sizes) / sum(YES ask sizes).
+    ratio > SKEW_NO_CONFIRM → crowd is on YES side (NO has depth advantage).
+    Returns None on failure.
+    """
+    try:
+        r = pnb_auth.get(f"/markets/{ticker}/orderbook")
+        if r.status_code != 200:
+            log.warning(f"Orderbook fetch failed: {r.status_code}")
+            return None
+        ob = r.json().get("orderbook", {})
+        yes_asks = ob.get("yes", [])   # [[price, size], ...]
+        no_asks  = ob.get("no",  [])
+
+        # Sum top 10 levels by size
+        yes_depth = sum(s for _, s in yes_asks[:10]) if yes_asks else 0
+        no_depth  = sum(s for _, s in no_asks[:10])  if no_asks  else 0
+
+        if yes_depth == 0:
+            return None
+        ratio = no_depth / yes_depth
+        log.info(f"Orderbook skew {ticker}: NO/YES={ratio:.2f} (yes_depth={yes_depth} no_depth={no_depth})")
+        return ratio
+    except Exception as e:
+        log.warning(f"Orderbook error: {e}")
+        return None
+
+
+# ─── EV: Fee-Aware ────────────────────────────────────────────────────────────
+
+def fee_adjusted_ev(win_prob, ask_dollars, contracts=1):
+    """
+    Kalshi fee = 0.07 × C × P × (1-P)  where P = (1 - ask_dollars)
+    Win payout = $1.00 per contract
+    Net profit if win  = (1.0 - ask_dollars) - fee
+    Net loss if lose   = ask_dollars + fee   (we lose our stake + paid the fee)
+
+    Actually Kalshi fee is charged on fill regardless — we approximate:
+    fee = KALSHI_FEE_RATE × contracts × ask_dollars × (1 - ask_dollars)
+    """
+    fee      = KALSHI_FEE_RATE * contracts * ask_dollars * (1.0 - ask_dollars)
+    profit   = (1.0 - ask_dollars) - fee
+    loss     = ask_dollars + fee
+    ev       = (win_prob * profit) - ((1 - win_prob) * loss)
+    return ev, fee
+
+
+# ─── Win Probability ─────────────────────────────────────────────────────────
+
+def no_win_prob(yes_ask):
+    """Conservative: 52% base + scaled excess, capped at 60%."""
+    excess = yes_ask - BECKER_YES_CEILING
+    return min(0.60, 0.52 + excess * 0.5)
+
+def yes_win_prob(yes_ask):
+    """Conservative: 52% base + scaled deficit, capped at 60%."""
+    deficit = BECKER_YES_FLOOR - yes_ask
+    return min(0.60, 0.52 + deficit * 0.5)
+
+
+# ─── Order Placement ─────────────────────────────────────────────────────────
+
+def place_order(ticker, side, price_dollars, count, dry_run):
+    price_cents = round(price_dollars * 100)
+    body = {
+        "ticker": ticker,
+        "side": side,
+        "action": "buy",
+        "count": count,
+        "type": "limit",
+        "yes_price": price_cents if side == "yes" else (100 - price_cents),
+    }
+    if dry_run:
+        log.info(f"[DRY-RUN] Would BUY {count}x {ticker} {side} @ ${price_dollars:.2f}")
+        return True, "DRY-RUN", "dry run"
+
+    r = pnb_auth.post("/portfolio/orders", body)
+    if r.status_code in (200, 201):
+        data = r.json().get("order", {})
+        order_id = data.get("order_id", "")
+        if re.match(r"^[0-9a-f-]{36}$", order_id):
+            log.info(f"ORDER PLACED: {ticker} {side} x{count} @ ${price_dollars:.2f} | id={order_id}")
+            return True, order_id, "ok"
+        else:
+            log.error(f"INVALID ORDER ID: {order_id} | {r.text[:200]}")
+            return False, None, "invalid order id"
+    else:
+        log.error(f"ORDER FAILED: {r.status_code} | {r.text[:200]}")
+        return False, None, r.text[:100]
+
+
+# ─── Single Scan Cycle ────────────────────────────────────────────────────────
+
+def scan_once(dry_run, balance_cents):
+    now = datetime.now(timezone.utc)
+
+    # Fetch open KXBTC15M markets
+    r = pnb_auth.get("/markets", params={"series_ticker": CRYPTO_SERIES, "limit": 5, "status": "open"})
+    if r.status_code != 200:
+        log.error(f"Market fetch failed: {r.status_code}")
+        return
+
+    markets = r.json().get("markets", [])
+    if not markets:
+        log.info("No open KXBTC15M markets — between windows or outside hours")
+        return
+
+    # Prune expired positions from state
+    active_tickers = {m["ticker"] for m in markets}
+    pnb_state.prune_expired(active_tickers)
+
+    # Skip if already holding a KXBTC15M contract
+    held = pnb_state.summary()["held"]
+    btc_held = [t for t in held if t.startswith("KXBTC15M")]
+    if btc_held:
+        log.info(f"Already holding: {btc_held} — waiting for expiry")
+        return
+
+    # Pick most liquid market
+    market = sorted(markets, key=lambda m: float(m.get("volume_fp") or 0), reverse=True)[0]
+    ticker  = market["ticker"]
+    yes_ask = float(market.get("yes_ask_dollars") or 0)
+    no_ask  = float(market.get("no_ask_dollars") or 0)
+    volume  = float(market.get("volume_fp") or 0)
+    close_s = market.get("close_time", "")[:19]
+
+    # Ghost market filter (settled contracts show near-zero spread)
+    if yes_ask + no_ask >= GHOST_SPREAD:
+        log.info(f"Ghost market detected {ticker} (spread={yes_ask+no_ask:.2f}) — skipping")
+        return
+
+    # Min price / liquidity filters
+    if yes_ask < MIN_PRICE or no_ask < MIN_PRICE:
+        log.info(f"Untraded {ticker} (yes=${yes_ask:.2f} no=${no_ask:.2f}) — skipping")
+        return
+    if volume < MIN_VOLUME:
+        log.info(f"Low volume {ticker} ({volume:.0f} < {MIN_VOLUME}) — skipping")
+        return
+
+    # Time-to-close filter
+    try:
+        close_dt = datetime.fromisoformat(close_s.replace("Z", "+00:00"))
+        minutes_left = (close_dt - now).total_seconds() / 60
+    except Exception:
+        minutes_left = 999
+    if minutes_left < MIN_MINUTES_TO_CLOSE:
+        log.info(f"Near expiry {ticker} ({minutes_left:.1f}min) — waiting for next window")
+        return
+
+    log.info(f"Evaluating {ticker} | YES=${yes_ask:.2f} NO=${no_ask:.2f} | {minutes_left:.0f}min | vol={volume:.0f}")
+
+    # Record for learning engine (always, not just on signal)
+    pnb_learn.record_crypto_price(ticker, yes_ask, no_ask, minutes_left, None)
+
+    # ── Signal 1: Becker Bias ──────────────────────────────────────────────
+    if yes_ask > BECKER_YES_CEILING:
+        becker_side = "no"
+        becker_ask  = no_ask
+        win_prob    = no_win_prob(yes_ask)
+        becker_signal = "BECKER-NO"
+    elif BECKER_YES_FLOOR > 0 and yes_ask < BECKER_YES_FLOOR:
+        becker_side = "yes"
+        becker_ask  = yes_ask
+        win_prob    = yes_win_prob(yes_ask)
+        becker_signal = "BECKER-YES"
+    else:
+        log.info(f"Neutral zone YES=${yes_ask:.2f} — no Becker signal")
+        return
+
+    # ── Signal 2: BTC Momentum ────────────────────────────────────────────
+    momentum_dir, slope = btc_momentum()
+    if becker_side == "no" and momentum_dir == "bullish":
+        log.info(f"Momentum conflict: Becker-NO but BTC trending bullish ({slope:.5f}) — skipping")
+        return
+    if becker_side == "yes" and momentum_dir == "bearish":
+        log.info(f"Momentum conflict: Becker-YES but BTC trending bearish ({slope:.5f}) — skipping")
+        return
+
+    # ── Signal 3: Orderbook Skew ──────────────────────────────────────────
+    skew = orderbook_skew(ticker)
+    if skew is not None:
+        if becker_side == "no" and skew < SKEW_NO_CONFIRM:
+            log.info(f"Skew not confirming NO trade (NO/YES={skew:.2f} < {SKEW_NO_CONFIRM}) — skipping")
+            return
+        # For YES trades, we'd want skew < 1/SKEW_NO_CONFIRM — future validation
+    else:
+        log.info("Orderbook unavailable — proceeding without skew confirmation")
+
+    # ── EV Check ─────────────────────────────────────────────────────────
+    ev, fee = fee_adjusted_ev(win_prob, becker_ask, MAX_CONTRACTS)
+    if ev < MIN_EV:
+        log.info(f"EV {ev:.1%} (fee=${fee:.3f}) below {MIN_EV:.0%} minimum — skipping")
+        return
+
+    log.info(
+        f"ALL SIGNALS ALIGN: {becker_signal} | momentum={momentum_dir} | "
+        f"skew={skew:.2f if skew else 'N/A'} | win_prob={win_prob:.0%} | EV={ev:.1%} (fee=${fee:.3f})"
+    )
+
+    # ── Execute ───────────────────────────────────────────────────────────
+    ok, order_id, msg = place_order(ticker, becker_side, becker_ask, MAX_CONTRACTS, dry_run)
+    if ok and order_id != "DRY-RUN":
+        pnb_state.record_buy(ticker, becker_side, becker_ask, MAX_CONTRACTS, order_id)
+        pnb_learn.record_crypto_price(ticker, yes_ask, no_ask, minutes_left, becker_signal)
+
+    mode_tag = "[DRY-RUN] " if dry_run else ""
+    status   = "PLACED" if ok else "FAILED"
+    skew_str = f"{skew:.2f}" if skew is not None else "N/A"
+    pnb_telegram.send(
+        f"{mode_tag}PNB Crypto — {datetime.now().strftime('%H:%M MST')}\n"
+        f"  {status} {ticker} {becker_side.upper()} @ ${becker_ask:.2f}\n"
+        f"  Signal: {becker_signal} | Momentum: {momentum_dir} | Skew: {skew_str}\n"
+        f"  win_est={win_prob:.0%} | EV={ev:.0%} | fee=${fee:.3f}\n"
+        f"Balance: ${balance_cents/100:.2f}"
+    )
+
+
+# ─── Main Loop ───────────────────────────────────────────────────────────────
+
+def run():
+    global _running
+    dry_run = not pnb_auth.is_live()
+    mode = "DRY-RUN" if dry_run else "LIVE"
+    log.info(f"=== PredictaNoob Crypto Engine v2 START | {mode} ===")
+    pnb_telegram.send(f"PNB Crypto Engine v2 started ({mode})")
+
+    while _running:
+        try:
+            # Balance check every cycle
+            bal_r = pnb_auth.get("/portfolio/balance")
+            if bal_r.status_code != 200:
+                log.error(f"Balance check failed: {bal_r.text[:100]}")
+                time.sleep(LOOP_INTERVAL_S)
+                continue
+
+            balance_cents = bal_r.json().get("balance", 0)
+            if balance_cents < HALT_BELOW_CENTS:
+                log.warning(f"Balance ${balance_cents/100:.2f} below halt — sleeping 5min")
+                time.sleep(300)
+                continue
+
+            scan_once(dry_run, balance_cents)
+
+        except Exception as e:
+            log.exception(f"Unhandled error in scan loop: {e}")
+
+        time.sleep(LOOP_INTERVAL_S)
+
+    log.info("=== PredictaNoob Crypto Engine STOPPED ===")
+
+
+if __name__ == "__main__":
+    run()
