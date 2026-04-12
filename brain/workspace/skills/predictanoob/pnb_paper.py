@@ -22,8 +22,16 @@ def _save(data):
         json.dump(data, f, indent=2)
 
 
+def already_holds(ticker):
+    """True if we have an unsettled paper trade on this ticker."""
+    data = _load()
+    return any(t["ticker"] == ticker and not t["settled"] for t in data["trades"])
+
+
 def record(ticker, side, price, contracts, signal, close_time):
-    """Log a simulated trade entry."""
+    """Log a simulated trade entry. Skips if already holding this ticker."""
+    if already_holds(ticker):
+        return False
     data = _load()
     data["trades"].append({
         "id":         str(uuid.uuid4())[:8],
