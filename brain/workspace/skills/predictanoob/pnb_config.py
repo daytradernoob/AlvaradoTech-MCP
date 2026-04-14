@@ -18,14 +18,13 @@ WINDOW_MINUTES     = 15       # Contract duration in minutes
 
 # Becker Optimism Bias thresholds
 BECKER_YES_CEILING = 0.55     # YES ask above this → retail optimism → buy NO
-BECKER_YES_FLOOR   = 0.40     # YES ask below this → retail under-betting YES → buy YES
+BECKER_YES_FLOOR   = 0.0      # YES ask below this → buy YES (disabled — unvalidated)
 
 # Early exit (stop loss / take profit)
-STOP_LOSS_PCT      = 0.50     # Exit if position value drops to 50% of entry
-TAKE_PROFIT_PCT    = 1.80     # Exit if position value reaches 180% of entry
-
-# BECKER-YES validation gate
-BECKER_YES_MIN_PROB = 0.48    # Conservative win prob until BECKER-YES has 15+ settled trades
+STOP_LOSS_PCT        = 0.50   # Exit if position value drops to 50% of entry
+TAKE_PROFIT_PCT      = 1.80   # Exit if position value reaches 180% of entry
+TAKE_PROFIT_MIN_MINS = 8      # Only take profit if > 8 min left (else let it settle)
+BECKER_YES_MIN_PROB  = 0.48   # Win prob fallback when BECKER-YES re-enabled
 
 # Momentum signal (yfinance 1-min BTC bars)
 MOMENTUM_LOOKBACK_BARS  = 5

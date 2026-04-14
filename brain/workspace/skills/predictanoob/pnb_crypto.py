@@ -25,7 +25,8 @@ from pnb_config import (
     SKEW_NO_CONFIRM, KALSHI_FEE_RATE, MIN_EV, MIN_MINUTES_TO_CLOSE,
     MIN_VOLUME, MIN_PRICE, HALT_BELOW_CENTS,
     KELLY_FRACTION, KELLY_MAX_CONTRACTS, KELLY_MIN_CONTRACTS,
-    MAX_MINUTES_TO_CLOSE, STOP_LOSS_PCT, TAKE_PROFIT_PCT, BECKER_YES_MIN_PROB,
+    MAX_MINUTES_TO_CLOSE, STOP_LOSS_PCT, TAKE_PROFIT_PCT,
+    TAKE_PROFIT_MIN_MINS, BECKER_YES_MIN_PROB,
 )
 
 LOG_PATH = "/home/rob-alvarado/RJA/.pnb/pnb_crypto.log"
@@ -248,6 +249,14 @@ def check_paper_exits(dry_run):
             log.info(f"STOP LOSS: {trade['ticker']} value ${current_value:.2f} < stop ${stop_price:.2f}")
 
         elif current_value > target_price:
+            # Don't take profit near expiry — just let it settle to $1.00
+            try:
+                close_dt = datetime.fromisoformat(trade["close_time"].replace("Z", "+00:00"))
+                mins_left = (close_dt - datetime.now(timezone.utc)).total_seconds() / 60
+            except Exception:
+                mins_left = 999
+            if mins_left < pnb_config.TAKE_PROFIT_MIN_MINS:
+                continue
             pnl = round((current_value - trade["price"]) * trade["contracts"], 4)
             trade["settled"] = True
             trade["result"]  = "exit"
@@ -427,6 +436,12 @@ def run():
     mode = "DRY-RUN" if dry_run else "LIVE"
     log.info(f"=== PredictaNoob Crypto Engine v2 START | {mode} ===")
     pnb_telegram.send(f"PNB Crypto Engine v2 started ({mode})")
+
+    # Run adapt() immediately on startup — don't wait for hourly timer.
+    # Ensures threshold changes take effect even if service restarts frequently.
+    startup_changes = pnb_learn.adapt()
+    for c in startup_changes:
+        log.info(f"[ADAPT on startup] {c}")
 
     last_hourly   = time.time()
     hour_windows  = 0   # distinct 15-min windows evaluated
