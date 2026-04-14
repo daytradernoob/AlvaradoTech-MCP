@@ -44,3 +44,15 @@ UNCERTAINTY_EV_BUFFER   = 0.04  # Extra EV required in 5–10°F uncertainty zon
 MIN_HIST_RATE      = 0.70    # Historical win rate ≥ 70% required
 MIN_EV_WEATHER     = 0.05    # Base EV floor (uncertainty buffer stacks on top)
 SKIP_SERIES        = {"KXHIGHTDC", "KXHIGHTHOU"}  # Sustained underperformers
+
+# ─── Runtime overrides (written by pnb_learn.adapt()) ─────────────────────────
+# Thresholds above are defaults. pnb_learn auto-adjusts based on paper trade
+# win rates and writes changes here. These override the defaults above.
+import json as _json, os as _os
+_OVERRIDES_PATH = "/home/rob-alvarado/RJA/.pnb/pnb_config_overrides.json"
+if _os.path.exists(_OVERRIDES_PATH):
+    try:
+        for _k, _v in _json.load(open(_OVERRIDES_PATH)).items():
+            globals()[_k] = _v
+    except Exception:
+        pass

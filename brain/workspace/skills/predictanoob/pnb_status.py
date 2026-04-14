@@ -31,8 +31,10 @@ def run():
 
     # Learning analysis
     analysis = pnb_learn.analyze()
-    w = analysis["weather"]
-    c = analysis["crypto"]
+    w        = analysis["weather"]
+    c        = analysis["crypto"]
+    sig_stats = analysis["signal_stats"]
+    adapt_changes = analysis["adapt_changes"]
 
     win_rate_str = f"{paper['win_rate']:.0%}" if paper['win_rate'] is not None else "n/a"
     pnl_str = f"${paper['total_pnl']:+.2f}" if paper['wins'] + paper['losses'] > 0 else "$0.00"
@@ -42,14 +44,30 @@ def run():
         "=" * 32,
         f"Balance:  ${balance_cents/100:.2f}  /  Target: ${TARGET_CENTS/100:.2f}  ({pct:.1f}%)",
         f"Mode:     {mode}",
-        f"Record:   {s['wins']}W / {s['losses']}L / {s['pending']} pending",
         f"",
         f"-- DRY-RUN PAPER RECORD --",
         f"  {paper['wins']}W / {paper['losses']}L / {paper['pending']} pending",
         f"  Win rate: {win_rate_str}  |  P&L: {pnl_str}",
         "",
-        f"Positions: {s['held_count']} held",
+        f"-- SIGNAL BREAKDOWN --",
     ]
+
+    if sig_stats:
+        for sig, st in sorted(sig_stats.items()):
+            wr_s = f"{st['win_rate']:.0%}" if st['win_rate'] is not None else "n/a"
+            lines.append(
+                f"  {sig:<20}  {st['wins']}W/{st['losses']}L  "
+                f"wr={wr_s}  P&L=${st['total_pnl']:+.2f}"
+            )
+    else:
+        lines.append("  No settled trades yet")
+
+    if adapt_changes:
+        lines += ["", "-- AUTO-ADAPT --"]
+        for c_line in adapt_changes:
+            lines.append(f"  {c_line}")
+
+    lines += ["", f"Positions: {s['held_count']} held"]
     lines.extend(held_lines or ["  (none)"])
 
     # --- Weather intelligence ---
@@ -57,13 +75,13 @@ def run():
     if w["closest_rate_miss"]:
         m = w["closest_rate_miss"]
         lines.append(f"Closest near-miss: {m['city']} {m['ticker'].split('-')[1]}")
-        lines.append(f"  Hist NO rate: {m['hist_no_rate']:.0%}  (need 70%)")
+        lines.append(f"  Hist rate: {m['hist_no_rate']:.0%}  (need 70%)")
         lines.append(f"  NOAA margin: {m['margin_f']}F  |  YES ask: ${m['yes_ask']:.2f}")
     else:
         lines.append("  No near-misses logged yet")
 
     if w["recommendation"]:
-        lines.append(f"RECOMMENDATION: {w['recommendation']}")
+        lines.append(f"NOTE: {w['recommendation']}")
 
     # --- Crypto intelligence ---
     lines += ["", "-- CRYPTO --"]
@@ -73,10 +91,10 @@ def run():
         lines.append(f"  Above 0.55 ceiling: {c['pct_above_ceiling']:.0f}%")
         lines.append(f"  Signals fired: {c['signals_fired_7d']}")
     else:
-        lines.append("  No crypto prices logged yet -- timing fix just applied")
+        lines.append("  No crypto prices logged yet")
 
     if c["recommendation"]:
-        lines.append(f"RECOMMENDATION: {c['recommendation']}")
+        lines.append(f"NOTE: {c['recommendation']}")
 
     text = "\n".join(lines)
     print(text)
