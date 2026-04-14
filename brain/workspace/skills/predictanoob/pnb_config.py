@@ -18,7 +18,10 @@ WINDOW_MINUTES     = 15       # Contract duration in minutes
 
 # Becker Optimism Bias thresholds
 BECKER_YES_CEILING = 0.55     # YES ask above this → retail optimism → buy NO
-BECKER_YES_FLOOR   = 0.0      # YES ask below this → buy YES (disabled until validated)
+BECKER_YES_FLOOR   = 0.40     # YES ask below this → retail under-betting YES → buy YES
+
+# Early exit (stop loss)
+STOP_LOSS_PCT      = 0.50     # Exit paper trade if position value drops to 50% of entry
 
 # Momentum signal (yfinance 1-min BTC bars)
 MOMENTUM_LOOKBACK_BARS  = 5
@@ -44,6 +47,12 @@ UNCERTAINTY_EV_BUFFER   = 0.04  # Extra EV required in 5–10°F uncertainty zon
 MIN_HIST_RATE      = 0.70    # Historical win rate ≥ 70% required
 MIN_EV_WEATHER     = 0.05    # Base EV floor (uncertainty buffer stacks on top)
 SKIP_SERIES        = {"KXHIGHTDC", "KXHIGHTHOU"}  # Sustained underperformers
+
+# ─── Live mode criteria ────────────────────────────────────────────────────────
+# Go live when ALL conditions met:
+LIVE_MIN_TRADES    = 50      # Minimum settled paper trades
+LIVE_MIN_WIN_RATE  = 0.52    # Minimum win rate across all signals
+LIVE_MIN_PNL       = 5.00    # Minimum total paper P&L in dollars
 
 # ─── Runtime overrides (written by pnb_learn.adapt()) ─────────────────────────
 # Thresholds above are defaults. pnb_learn auto-adjusts based on paper trade

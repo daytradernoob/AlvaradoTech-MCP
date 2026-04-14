@@ -18,13 +18,14 @@ import yfinance as yf
 import numpy as np
 
 import pnb_auth, pnb_state, pnb_telegram, pnb_learn, pnb_paper
+import pnb_config
 from pnb_config import (
     CRYPTO_SERIES, LOOP_INTERVAL_S, BECKER_YES_CEILING, BECKER_YES_FLOOR,
     MOMENTUM_LOOKBACK_BARS, MOMENTUM_BEARISH_THRESH, MOMENTUM_BULLISH_THRESH,
     SKEW_NO_CONFIRM, KALSHI_FEE_RATE, MIN_EV, MIN_MINUTES_TO_CLOSE,
     MIN_VOLUME, MIN_PRICE, HALT_BELOW_CENTS,
     KELLY_FRACTION, KELLY_MAX_CONTRACTS, KELLY_MIN_CONTRACTS,
-    MAX_MINUTES_TO_CLOSE,
+    MAX_MINUTES_TO_CLOSE, STOP_LOSS_PCT,
 )
 
 LOG_PATH = "/home/rob-alvarado/RJA/.pnb/pnb_crypto.log"
@@ -201,6 +202,53 @@ def place_order(ticker, side, price_dollars, count, dry_run):
 
 # ─── Single Scan Cycle ────────────────────────────────────────────────────────
 
+def check_paper_exits(dry_run):
+    """
+    For each unsettled paper trade, check if current market price has moved
+    so far against us that we should exit early (stop loss).
+    Simulates selling by marking the trade settled at current value.
+    """
+    if not dry_run:
+        return
+    data = pnb_paper._load()
+    pending = [t for t in data["trades"] if not t["settled"]]
+    if not pending:
+        return
+
+    exited = []
+    for trade in pending:
+        r = pnb_auth.get(f"/markets/{trade['ticker']}")
+        if r.status_code != 200:
+            continue
+        market = r.json().get("market", {})
+        status = market.get("status", "")
+        if status in ("finalized", "closed"):
+            continue  # let check_settlements() handle actual settlement
+
+        # Current value of our position = what we'd get selling now
+        if trade["side"] == "no":
+            current_value = float(market.get("no_ask_dollars") or 0)
+        else:
+            current_value = float(market.get("yes_ask_dollars") or 0)
+
+        stop_price = trade["price"] * pnb_config.STOP_LOSS_PCT
+        if current_value > 0 and current_value < stop_price:
+            # Exit: record as settled with partial loss
+            pnl = round((current_value - trade["price"]) * trade["contracts"], 4)
+            trade["settled"] = True
+            trade["result"]  = "exit"
+            trade["won"]     = False
+            trade["pnl"]     = pnl
+            exited.append(f"{trade['ticker']} {trade['side'].upper()} exit @ ${current_value:.2f} (entry ${trade['price']:.2f}) pnl=${pnl:.2f}")
+            log.info(f"STOP LOSS EXIT: {trade['ticker']} — value ${current_value:.2f} < stop ${stop_price:.2f}")
+
+    if exited:
+        pnb_paper._save(data)
+        pnb_telegram.send(
+            f"[DRY-RUN] STOP LOSS\n" + "\n".join(f"  {e}" for e in exited)
+        )
+
+
 def scan_once(dry_run, balance_cents):
     """
     Evaluate one scan cycle. Returns a result dict for the hourly summary, or None
@@ -214,9 +262,14 @@ def scan_once(dry_run, balance_cents):
     """
     now = datetime.now(timezone.utc)
 
-    # Check outcomes of any pending paper trades
+    # Check outcomes and stop losses on pending paper trades
     if dry_run:
         pnb_paper.check_settlements()
+        check_paper_exits(dry_run)
+
+    # Re-read thresholds in case adapt() updated them since startup
+    becker_ceiling = pnb_config.BECKER_YES_CEILING
+    becker_floor   = pnb_config.BECKER_YES_FLOOR
 
     # Fetch open KXBTC15M markets
     r = pnb_auth.get("/markets", params={"series_ticker": CRYPTO_SERIES, "limit": 5, "status": "open"})
@@ -272,18 +325,18 @@ def scan_once(dry_run, balance_cents):
     pnb_learn.record_crypto_price(ticker, yes_ask, no_ask, minutes_left, None)
 
     # ── Signal 1: Becker Bias ──────────────────────────────────────────────
-    if yes_ask > BECKER_YES_CEILING:
+    if yes_ask > becker_ceiling:
         becker_side = "no"
         becker_ask  = no_ask
         win_prob    = no_win_prob(yes_ask)
         becker_signal = "BECKER-NO"
-    elif BECKER_YES_FLOOR > 0 and yes_ask < BECKER_YES_FLOOR:
+    elif becker_floor > 0 and yes_ask < becker_floor:
         becker_side = "yes"
         becker_ask  = yes_ask
         win_prob    = yes_win_prob(yes_ask)
         becker_signal = "BECKER-YES"
     else:
-        log.info(f"Neutral zone YES=${yes_ask:.2f} — no Becker signal")
+        log.info(f"Neutral zone YES=${yes_ask:.2f} (ceiling=${becker_ceiling:.2f} floor=${becker_floor:.2f}) — no Becker signal")
         return {"evaluated": True, "signal": False, "reason": f"neutral YES=${yes_ask:.2f}", "ticker": ticker}
 
     # ── Signal 2: BTC Momentum ────────────────────────────────────────────

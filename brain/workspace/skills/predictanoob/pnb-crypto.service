@@ -2,6 +2,7 @@
 Description=PredictaNoob Crypto Engine (KXBTC15M continuous loop)
 After=network-online.target
 Wants=network-online.target
+OnFailure=pnb-crypto-alert@%n.service
 
 [Service]
 Type=simple

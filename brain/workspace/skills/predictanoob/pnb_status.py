@@ -67,6 +67,22 @@ def run():
         for c_line in adapt_changes:
             lines.append(f"  {c_line}")
 
+    # Live readiness
+    lr = analysis["live_readiness"]
+    lines += ["", "-- LIVE READINESS --"]
+    for check, passed in lr["checks"].items():
+        lines.append(f"  {'OK' if passed else 'NO'}  {check}")
+    lines.append(f"  {'>>> READY TO GO LIVE <<<' if lr['ready'] else 'Not ready yet'}")
+
+    # Condition analysis (only if we have data)
+    ca = analysis.get("condition_analysis", {})
+    if ca.get("becker_no_by_momentum"):
+        lines += ["", "-- CONDITION ANALYSIS --"]
+        lines.append("  BECKER-NO by momentum:")
+        for m, s in ca["becker_no_by_momentum"].items():
+            wr = f"{s['win_rate']:.0%}" if s['win_rate'] else "n/a"
+            lines.append(f"    {m:<10}  {s['wins']}W/{s['losses']}L  wr={wr}")
+
     lines += ["", f"Positions: {s['held_count']} held"]
     lines.extend(held_lines or ["  (none)"])
 

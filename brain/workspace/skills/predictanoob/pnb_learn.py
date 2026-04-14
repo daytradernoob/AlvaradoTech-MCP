@@ -191,11 +191,103 @@ def adapt():
 
     if changes:
         _save_overrides(overrides)
+        # Restart pnb-crypto so it reloads pnb_config with new overrides
+        import subprocess
+        try:
+            subprocess.Popen(["systemctl", "--user", "restart", "pnb-crypto"])
+            log.info("Triggered pnb-crypto restart to apply config changes")
+        except Exception as e:
+            log.warning(f"Could not restart pnb-crypto: {e}")
 
     return changes
 
 
 # ─── analyze() — called by pnb_status ────────────────────────────────────────
+
+def condition_analysis():
+    """
+    Break down BECKER-NO win rates by entry conditions.
+    Requires trades to have 'conditions' field (added 2026-04-14).
+    Returns dict of condition splits with win rates.
+    """
+    trades = _load_paper()
+    settled = [t for t in trades if t.get("settled") and t.get("conditions")]
+    if not settled:
+        return {}
+
+    result = {}
+
+    # Split by momentum direction
+    momentum_groups = {}
+    for t in settled:
+        if t.get("signal") != "BECKER-NO":
+            continue
+        m = t["conditions"].get("momentum", "unknown")
+        if m not in momentum_groups:
+            momentum_groups[m] = {"wins": 0, "losses": 0}
+        if t["won"]:
+            momentum_groups[m]["wins"] += 1
+        else:
+            momentum_groups[m]["losses"] += 1
+
+    if momentum_groups:
+        result["becker_no_by_momentum"] = {}
+        for m, s in momentum_groups.items():
+            total = s["wins"] + s["losses"]
+            result["becker_no_by_momentum"][m] = {
+                "wins": s["wins"], "losses": s["losses"],
+                "win_rate": round(s["wins"] / total, 3) if total else None,
+            }
+
+    # Split by minutes_left bucket (early 8-20min vs late 20-50min)
+    time_groups = {"early (8-20min)": {"wins": 0, "losses": 0},
+                   "late (20-50min)":  {"wins": 0, "losses": 0}}
+    for t in settled:
+        if t.get("signal") != "BECKER-NO":
+            continue
+        mins = t["conditions"].get("minutes_left", 0)
+        bucket = "early (8-20min)" if mins <= 20 else "late (20-50min)"
+        if t["won"]:
+            time_groups[bucket]["wins"] += 1
+        else:
+            time_groups[bucket]["losses"] += 1
+
+    result["becker_no_by_time"] = {}
+    for bucket, s in time_groups.items():
+        total = s["wins"] + s["losses"]
+        if total:
+            result["becker_no_by_time"][bucket] = {
+                "wins": s["wins"], "losses": s["losses"],
+                "win_rate": round(s["wins"] / total, 3),
+            }
+
+    return result
+
+
+def live_readiness():
+    """Check if paper performance meets criteria to go live."""
+    from pnb_config import LIVE_MIN_TRADES, LIVE_MIN_WIN_RATE, LIVE_MIN_PNL
+    trades = _load_paper()
+    settled = [t for t in trades if t.get("settled")]
+    if not settled:
+        return {"ready": False, "reason": "no settled trades"}
+    wins = [t for t in settled if t.get("won")]
+    total_pnl = sum(t.get("pnl") or 0 for t in settled)
+    win_rate = len(wins) / len(settled)
+    checks = {
+        f"trades >= {LIVE_MIN_TRADES}":    len(settled) >= LIVE_MIN_TRADES,
+        f"win_rate >= {LIVE_MIN_WIN_RATE:.0%}": win_rate >= LIVE_MIN_WIN_RATE,
+        f"P&L >= ${LIVE_MIN_PNL:.2f}":     total_pnl >= LIVE_MIN_PNL,
+    }
+    ready = all(checks.values())
+    return {
+        "ready":    ready,
+        "checks":   checks,
+        "trades":   len(settled),
+        "win_rate": round(win_rate, 3),
+        "pnl":      round(total_pnl, 2),
+    }
+
 
 def analyze():
     """
@@ -243,8 +335,10 @@ def analyze():
             crypto_rec = f"Only {pct_above:.0f}% of YES asks above 0.55 ceiling (avg ${avg_yes:.2f}) — Becker signal rare"
 
     return {
-        "signal_stats": stats,
-        "adapt_changes": changes,
+        "signal_stats":     stats,
+        "adapt_changes":    changes,
+        "condition_analysis": condition_analysis(),
+        "live_readiness":   live_readiness(),
         "weather": {
             "near_misses_7d":    len(recent_weather),
             "closest_rate_miss": rate_misses[0] if rate_misses else None,

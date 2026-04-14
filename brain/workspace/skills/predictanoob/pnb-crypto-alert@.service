@@ -1,0 +1,8 @@
+[Unit]
+Description=Alert on pnb-crypto failure
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/rob-alvarado/AlvaradoTech-MCP/brain/workspace/skills/predictanoob
+ExecStart=/usr/bin/python3 -c "import pnb_telegram; pnb_telegram.send('ALERT: pnb-crypto service FAILED — check logs: journalctl --user -u pnb-crypto -n 50')"
+Environment="PYTHONPATH=/home/rob-alvarado/AlvaradoTech-MCP/brain/workspace/skills/predictanoob"
