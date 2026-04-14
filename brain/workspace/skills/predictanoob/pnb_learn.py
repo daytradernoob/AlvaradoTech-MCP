@@ -163,9 +163,14 @@ def adapt():
     overrides = _load_overrides()
     changes  = []
 
+    # Only adapt if we have MIN_ADAPT_TRADES new natural settled trades since last adapt
+    last_bno_total   = overrides.get("_last_bno_total", 0)
+    last_w_total     = overrides.get("_last_w_total", 0)
+
     # ── BECKER-NO adaptation (uses natural win rate — excludes stop losses) ──
     bno = stats.get("BECKER-NO")
-    if bno and (bno["wins"] + bno["losses"]) >= MIN_ADAPT_TRADES:
+    bno_nat_total = (bno["wins"] + bno["losses"]) if bno else 0
+    if bno and bno_nat_total >= MIN_ADAPT_TRADES and (bno_nat_total - last_bno_total) >= MIN_ADAPT_TRADES:
         current_ceiling = overrides.get("BECKER_YES_CEILING", BECKER_YES_CEILING)
         wr = bno["natural_win_rate"]
         new_ceiling = None
@@ -177,15 +182,16 @@ def adapt():
             changes.append(f"BECKER_YES_CEILING {current_ceiling:.2f} → {new_ceiling:.2f} (BECKER-NO win rate {wr:.0%} > 70%)")
         if new_ceiling is not None:
             overrides["BECKER_YES_CEILING"] = new_ceiling
+            overrides["_last_bno_total"] = bno_nat_total
 
     # ── Weather adaptation ────────────────────────────────────────────────
     weather_sigs = {k: v for k, v in stats.items() if k.startswith("WEATHER")}
     w_wins   = sum(v["wins"]          for v in weather_sigs.values())
-    w_losses = sum(v["losses"]        for v in weather_sigs.values())  # natural only
+    w_losses = sum(v["losses"]        for v in weather_sigs.values())
     w_total  = w_wins + w_losses
-    if w_total >= MIN_ADAPT_TRADES:
+    if w_total >= MIN_ADAPT_TRADES and (w_total - last_w_total) >= MIN_ADAPT_TRADES:
         current_rate = overrides.get("MIN_HIST_RATE", MIN_HIST_RATE)
-        wr = w_wins / w_total  # natural win rate
+        wr = w_wins / w_total
         new_rate = None
         if wr < 0.55:
             new_rate = round(min(0.80, current_rate + 0.03), 2)
@@ -195,6 +201,7 @@ def adapt():
             changes.append(f"MIN_HIST_RATE {current_rate:.2f} → {new_rate:.2f} (weather win rate {wr:.0%} > 75%)")
         if new_rate is not None:
             overrides["MIN_HIST_RATE"] = new_rate
+            overrides["_last_w_total"] = w_total
 
     if changes:
         _save_overrides(overrides)

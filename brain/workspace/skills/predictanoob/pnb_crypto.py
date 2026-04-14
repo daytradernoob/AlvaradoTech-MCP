@@ -26,7 +26,7 @@ from pnb_config import (
     MIN_VOLUME, MIN_PRICE, HALT_BELOW_CENTS,
     KELLY_FRACTION, KELLY_MAX_CONTRACTS, KELLY_MIN_CONTRACTS,
     MAX_MINUTES_TO_CLOSE, STOP_LOSS_PCT, TAKE_PROFIT_PCT,
-    TAKE_PROFIT_MIN_MINS, BECKER_YES_MIN_PROB,
+    TAKE_PROFIT_MIN_MINS, BECKER_YES_MIN_PROB, DAILY_LOSS_LIMIT,
 )
 
 LOG_PATH = "/home/rob-alvarado/RJA/.pnb/pnb_crypto.log"
@@ -283,10 +283,12 @@ def scan_once(dry_run, balance_cents):
     """
     now = datetime.now(timezone.utc)
 
-    # Check outcomes and stop losses on pending paper trades
+    # Check outcomes and stop losses
     if dry_run:
         pnb_paper.check_settlements()
         check_paper_exits(dry_run)
+    else:
+        pnb_state.check_settlements(pnb_auth.get)
 
     # Re-read thresholds in case adapt() updated them since startup
     becker_ceiling = pnb_config.BECKER_YES_CEILING
@@ -462,6 +464,16 @@ def run():
                 log.warning(f"Balance ${balance_cents/100:.2f} below halt — sleeping 5min")
                 time.sleep(300)
                 continue
+
+            # Daily loss circuit breaker (live only)
+            if not dry_run:
+                dpnl = pnb_state.daily_pnl()
+                if dpnl <= -DAILY_LOSS_LIMIT:
+                    msg = f"DAILY LOSS LIMIT HIT: ${dpnl:.2f} — halting live trading for today"
+                    log.warning(msg)
+                    pnb_telegram.send(f"PNB HALT: {msg}")
+                    time.sleep(3600)
+                    continue
 
             result = scan_once(dry_run, balance_cents)
 

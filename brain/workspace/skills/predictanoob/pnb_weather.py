@@ -199,9 +199,11 @@ def run():
 
     log.info(f"=== Weather scan v2 | {datetime.now().strftime('%Y-%m-%d %H:%M')} | {'DRY-RUN' if dry_run else 'LIVE'} ===")
 
-    # Check outcomes of any pending paper trades from previous scans
+    # Check outcomes of pending trades
     if dry_run:
         pnb_paper.check_settlements()
+    else:
+        pnb_state.check_settlements(pnb_auth.get)
 
     bal_r = pnb_auth.get("/portfolio/balance")
     if bal_r.status_code != 200:

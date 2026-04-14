@@ -57,6 +57,9 @@ LIVE_MIN_TRADES    = 50      # Minimum settled paper trades
 LIVE_MIN_WIN_RATE  = 0.52    # Minimum win rate across all signals
 LIVE_MIN_PNL       = 5.00    # Minimum total paper P&L in dollars
 
+# Daily loss circuit breaker (live mode only)
+DAILY_LOSS_LIMIT   = 3.00    # Halt live trading if daily P&L drops below -$3.00
+
 # ─── Runtime overrides (written by pnb_learn.adapt()) ─────────────────────────
 # Thresholds above are defaults. pnb_learn auto-adjusts based on paper trade
 # win rates and writes changes here. These override the defaults above.
