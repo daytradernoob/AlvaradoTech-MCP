@@ -28,8 +28,13 @@ def already_holds(ticker):
     return any(t["ticker"] == ticker and not t["settled"] for t in data["trades"])
 
 
-def record(ticker, side, price, contracts, signal, close_time):
-    """Log a simulated trade entry. Skips if already holding this ticker."""
+def record(ticker, side, price, contracts, signal, close_time, conditions=None):
+    """
+    Log a simulated trade entry. Skips if already holding this ticker.
+    conditions: dict of signal inputs at entry time, e.g.:
+      crypto:  {yes_ask, momentum, skew, minutes_left}
+      weather: {noaa_high, threshold, margin_f, hist_rate}
+    """
     if already_holds(ticker):
         return False
     data = _load()
@@ -41,6 +46,7 @@ def record(ticker, side, price, contracts, signal, close_time):
         "price":      round(price, 4),
         "contracts":  contracts,
         "signal":     signal,
+        "conditions": conditions or {},
         "close_time": close_time,
         "settled":    False,
         "result":     None,

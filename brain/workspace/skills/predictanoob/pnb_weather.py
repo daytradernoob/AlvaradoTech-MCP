@@ -325,8 +325,16 @@ def run():
             ok, order_id, msg = place_order(ticker, trade_side, trade_ask, contracts, dry_run)
             if ok:
                 if order_id == "DRY-RUN":
-                    pnb_paper.record(ticker, trade_side, trade_ask, contracts,
-                                     f"WEATHER-{trade_side.upper()}", m.get("close_time", ""))
+                    pnb_paper.record(
+                        ticker, trade_side, trade_ask, contracts,
+                        f"WEATHER-{trade_side.upper()}", m.get("close_time", ""),
+                        conditions={
+                            "noaa_high": noaa_high,
+                            "threshold": threshold,
+                            "margin_f":  round(signed_margin, 1),
+                            "hist_rate": round(win_prob, 3),
+                        }
+                    )
                 else:
                     pnb_state.record_buy(ticker, trade_side, trade_ask, contracts, order_id)
             results.append({
@@ -335,6 +343,11 @@ def run():
             })
 
     pnb_state.prune_expired(all_active)
+
+    # Run adapt — may update thresholds based on settled paper outcomes
+    adapt_changes = pnb_learn.adapt()
+    for c in adapt_changes:
+        log.info(f"[ADAPT] {c}")
 
     mode_tag = "[DRY-RUN] " if dry_run else ""
     if results:

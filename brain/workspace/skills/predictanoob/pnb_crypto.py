@@ -152,14 +152,20 @@ def fee_adjusted_ev(win_prob, ask_dollars, contracts=1):
 # ─── Win Probability ─────────────────────────────────────────────────────────
 
 def no_win_prob(yes_ask):
-    """Conservative: 52% base + scaled excess, capped at 60%."""
-    excess = yes_ask - BECKER_YES_CEILING
-    return min(0.60, 0.52 + excess * 0.5)
+    """
+    Use observed BECKER-NO win rate if we have enough trades (>= 15 settled).
+    Falls back to conservative static estimate.
+    """
+    static = min(0.60, 0.52 + (yes_ask - BECKER_YES_CEILING) * 0.5)
+    return pnb_learn.get_win_prob("BECKER-NO", static)
 
 def yes_win_prob(yes_ask):
-    """Conservative: 52% base + scaled deficit, capped at 60%."""
-    deficit = BECKER_YES_FLOOR - yes_ask
-    return min(0.60, 0.52 + deficit * 0.5)
+    """
+    Use observed BECKER-YES win rate if we have enough trades (>= 15 settled).
+    Falls back to conservative static estimate.
+    """
+    static = min(0.60, 0.52 + (BECKER_YES_FLOOR - yes_ask) * 0.5)
+    return pnb_learn.get_win_prob("BECKER-YES", static)
 
 
 # ─── Order Placement ─────────────────────────────────────────────────────────
@@ -315,8 +321,16 @@ def scan_once(dry_run, balance_cents):
     ok, order_id, msg = place_order(ticker, becker_side, becker_ask, contracts, dry_run)
     if ok:
         if order_id == "DRY-RUN":
-            pnb_paper.record(ticker, becker_side, becker_ask, contracts, becker_signal,
-                             market.get("close_time", ""))
+            pnb_paper.record(
+                ticker, becker_side, becker_ask, contracts, becker_signal,
+                market.get("close_time", ""),
+                conditions={
+                    "yes_ask":      round(yes_ask, 2),
+                    "momentum":     momentum_dir,
+                    "skew":         round(skew, 2) if skew is not None else None,
+                    "minutes_left": round(minutes_left, 1),
+                }
+            )
         else:
             pnb_state.record_buy(ticker, becker_side, becker_ask, contracts, order_id)
         pnb_learn.record_crypto_price(ticker, yes_ask, no_ask, minutes_left, becker_signal)
@@ -387,6 +401,9 @@ def run():
                 paper = pnb_paper.summary()
                 win_rate_str = f"{paper['win_rate']:.0%}" if paper['win_rate'] is not None else "n/a"
 
+                # Run adapt — may update thresholds
+                adapt_changes = pnb_learn.adapt()
+
                 lines = [
                     f"{mode_tag}PNB Crypto — {ts}",
                     f"Windows: {hour_windows} | Signals: {len(hour_signals)}",
@@ -405,6 +422,9 @@ def run():
                     f"Paper: {paper['wins']}W/{paper['losses']}L  win rate: {win_rate_str}  P&L: ${paper['total_pnl']:+.2f}",
                     f"Balance: ${balance_cents/100:.2f}",
                 ]
+                if adapt_changes:
+                    lines.append("ADAPTED: " + " | ".join(adapt_changes))
+
                 pnb_telegram.send("\n".join(lines))
                 log.info(f"Hourly summary sent | windows={hour_windows} signals={len(hour_signals)}")
 

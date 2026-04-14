@@ -17,6 +17,7 @@ PAPER_PATH     = "/home/rob-alvarado/RJA/.pnb/pnb_paper.json"
 OVERRIDES_PATH = "/home/rob-alvarado/RJA/.pnb/pnb_config_overrides.json"
 
 MIN_ADAPT_TRADES = 20   # Don't auto-adjust until we have this many settled trades per signal
+MIN_WIN_PROB_TRADES = 15  # Use observed win rate once we have this many settled trades
 
 log = logging.getLogger("pnb_learn")
 
@@ -120,6 +121,18 @@ def _save_overrides(overrides):
     with open(OVERRIDES_PATH, "w") as f:
         json.dump(overrides, f, indent=2)
     log.info(f"Config overrides updated: {overrides}")
+
+def get_win_prob(signal_name, fallback):
+    """
+    Return observed win rate for signal_name if we have MIN_WIN_PROB_TRADES settled trades.
+    Falls back to the static estimate otherwise.
+    """
+    stats = signal_stats()
+    s = stats.get(signal_name)
+    if s and s["total"] >= MIN_WIN_PROB_TRADES and s["win_rate"] is not None:
+        return s["win_rate"]
+    return fallback
+
 
 def adapt():
     """
