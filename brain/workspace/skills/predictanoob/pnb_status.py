@@ -4,7 +4,7 @@ Sent to Telegram daily at 8AM and on demand.
 """
 import json, os
 from datetime import date
-import pnb_auth, pnb_state, pnb_telegram, pnb_learn, pnb_paper
+import pnb_auth, pnb_state, pnb_telegram, pnb_learn, pnb_paper, pnb_config
 
 TARGET_CENTS = 5000
 
@@ -54,10 +54,12 @@ def run():
 
     if sig_stats:
         for sig, st in sorted(sig_stats.items()):
-            wr_s = f"{st['win_rate']:.0%}" if st['win_rate'] is not None else "n/a"
+            nat_wr = f"{st['natural_win_rate']:.0%}" if st['natural_win_rate'] is not None else "n/a"
+            sl_note = f"  SL={st['stop_losses']}" if st['stop_losses'] else ""
+            unvalidated = " (unvalidated)" if sig == "BECKER-YES" and st["total"] < 15 else ""
             lines.append(
-                f"  {sig:<20}  {st['wins']}W/{st['losses']}L  "
-                f"wr={wr_s}  P&L=${st['total_pnl']:+.2f}"
+                f"  {sig:<20}  {st['wins']}W/{st['losses']}L{sl_note}  "
+                f"nat_wr={nat_wr}  P&L=${st['total_pnl']:+.2f}{unvalidated}"
             )
     else:
         lines.append("  No settled trades yet")
@@ -66,6 +68,19 @@ def run():
         lines += ["", "-- AUTO-ADAPT --"]
         for c_line in adapt_changes:
             lines.append(f"  {c_line}")
+
+    # Active config (shows overridden values if adapt() has changed them)
+    overrides_path = "/home/rob-alvarado/RJA/.pnb/pnb_config_overrides.json"
+    overrides = {}
+    if os.path.exists(overrides_path):
+        with open(overrides_path) as f:
+            overrides = json.load(f)
+    lines += ["", "-- ACTIVE CONFIG --"]
+    lines.append(f"  BECKER_YES_CEILING: {pnb_config.BECKER_YES_CEILING:.2f}" + (" (adapted)" if "BECKER_YES_CEILING" in overrides else ""))
+    lines.append(f"  BECKER_YES_FLOOR:   {pnb_config.BECKER_YES_FLOOR:.2f}")
+    lines.append(f"  MIN_HIST_RATE:      {pnb_config.MIN_HIST_RATE:.2f}" + (" (adapted)" if "MIN_HIST_RATE" in overrides else ""))
+    lines.append(f"  MIN_EV:             {pnb_config.MIN_EV:.2f}")
+    lines.append(f"  STOP_LOSS_PCT:      {pnb_config.STOP_LOSS_PCT:.0%}  TAKE_PROFIT: {pnb_config.TAKE_PROFIT_PCT:.0%}")
 
     # Live readiness
     lr = analysis["live_readiness"]

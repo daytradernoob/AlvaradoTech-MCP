@@ -79,7 +79,9 @@ def _load_paper():
 def signal_stats():
     """
     Group settled paper trades by signal type.
-    Returns dict: { signal_name: {wins, losses, total, win_rate, avg_pnl} }
+    Separates natural settlements (result=yes/no) from stop-loss exits (result=exit).
+    adapt() uses natural_win_rate — stop losses don't pollute the signal quality signal.
+    P&L includes all outcomes.
     """
     trades = _load_paper()
     settled = [t for t in trades if t.get("settled")]
@@ -88,23 +90,28 @@ def signal_stats():
     for t in settled:
         sig = t.get("signal", "UNKNOWN")
         if sig not in stats:
-            stats[sig] = {"wins": 0, "losses": 0, "pnl": 0.0}
+            stats[sig] = {"wins": 0, "nat_losses": 0, "stop_losses": 0, "pnl": 0.0}
         if t.get("won"):
             stats[sig]["wins"] += 1
+        elif t.get("result") == "exit":
+            stats[sig]["stop_losses"] += 1
         else:
-            stats[sig]["losses"] += 1
+            stats[sig]["nat_losses"] += 1
         stats[sig]["pnl"] += t.get("pnl") or 0.0
 
     result = {}
     for sig, s in stats.items():
-        total = s["wins"] + s["losses"]
+        nat_total = s["wins"] + s["nat_losses"]
+        full_total = nat_total + s["stop_losses"]
         result[sig] = {
-            "wins":     s["wins"],
-            "losses":   s["losses"],
-            "total":    total,
-            "win_rate": s["wins"] / total if total else None,
-            "avg_pnl":  round(s["pnl"] / total, 4) if total else None,
-            "total_pnl": round(s["pnl"], 4),
+            "wins":         s["wins"],
+            "losses":       s["nat_losses"],
+            "stop_losses":  s["stop_losses"],
+            "total":        full_total,
+            "natural_win_rate": s["wins"] / nat_total if nat_total else None,  # for adapt()
+            "win_rate":     s["wins"] / full_total if full_total else None,     # for display
+            "avg_pnl":      round(s["pnl"] / full_total, 4) if full_total else None,
+            "total_pnl":    round(s["pnl"], 4),
         }
     return result
 
@@ -129,8 +136,8 @@ def get_win_prob(signal_name, fallback):
     """
     stats = signal_stats()
     s = stats.get(signal_name)
-    if s and s["total"] >= MIN_WIN_PROB_TRADES and s["win_rate"] is not None:
-        return s["win_rate"]
+    if s and (s["wins"] + s["losses"]) >= MIN_WIN_PROB_TRADES and s["natural_win_rate"] is not None:
+        return s["natural_win_rate"]
     return fallback
 
 
@@ -156,11 +163,11 @@ def adapt():
     overrides = _load_overrides()
     changes  = []
 
-    # ── BECKER-NO adaptation ──────────────────────────────────────────────
+    # ── BECKER-NO adaptation (uses natural win rate — excludes stop losses) ──
     bno = stats.get("BECKER-NO")
-    if bno and bno["total"] >= MIN_ADAPT_TRADES:
+    if bno and (bno["wins"] + bno["losses"]) >= MIN_ADAPT_TRADES:
         current_ceiling = overrides.get("BECKER_YES_CEILING", BECKER_YES_CEILING)
-        wr = bno["win_rate"]
+        wr = bno["natural_win_rate"]
         new_ceiling = None
         if wr < 0.45:
             new_ceiling = round(min(0.72, current_ceiling + 0.03), 2)
@@ -173,12 +180,12 @@ def adapt():
 
     # ── Weather adaptation ────────────────────────────────────────────────
     weather_sigs = {k: v for k, v in stats.items() if k.startswith("WEATHER")}
-    w_wins   = sum(v["wins"]   for v in weather_sigs.values())
-    w_losses = sum(v["losses"] for v in weather_sigs.values())
+    w_wins   = sum(v["wins"]          for v in weather_sigs.values())
+    w_losses = sum(v["losses"]        for v in weather_sigs.values())  # natural only
     w_total  = w_wins + w_losses
     if w_total >= MIN_ADAPT_TRADES:
         current_rate = overrides.get("MIN_HIST_RATE", MIN_HIST_RATE)
-        wr = w_wins / w_total
+        wr = w_wins / w_total  # natural win rate
         new_rate = None
         if wr < 0.55:
             new_rate = round(min(0.80, current_rate + 0.03), 2)

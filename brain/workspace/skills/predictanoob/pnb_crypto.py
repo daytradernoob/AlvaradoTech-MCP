@@ -25,7 +25,7 @@ from pnb_config import (
     SKEW_NO_CONFIRM, KALSHI_FEE_RATE, MIN_EV, MIN_MINUTES_TO_CLOSE,
     MIN_VOLUME, MIN_PRICE, HALT_BELOW_CENTS,
     KELLY_FRACTION, KELLY_MAX_CONTRACTS, KELLY_MIN_CONTRACTS,
-    MAX_MINUTES_TO_CLOSE, STOP_LOSS_PCT,
+    MAX_MINUTES_TO_CLOSE, STOP_LOSS_PCT, TAKE_PROFIT_PCT, BECKER_YES_MIN_PROB,
 )
 
 LOG_PATH = "/home/rob-alvarado/RJA/.pnb/pnb_crypto.log"
@@ -162,11 +162,12 @@ def no_win_prob(yes_ask):
 
 def yes_win_prob(yes_ask):
     """
-    Use observed BECKER-YES win rate if we have enough trades (>= 15 settled).
-    Falls back to conservative static estimate.
+    Use observed BECKER-YES win rate if we have >= 15 settled trades.
+    Falls back to BECKER_YES_MIN_PROB (0.48) — deliberately below 50% until validated.
+    This conservative floor means most BECKER-YES trades won't clear MIN_EV,
+    limiting exposure until the signal proves itself.
     """
-    static = min(0.60, 0.52 + (BECKER_YES_FLOOR - yes_ask) * 0.5)
-    return pnb_learn.get_win_prob("BECKER-YES", static)
+    return pnb_learn.get_win_prob("BECKER-YES", BECKER_YES_MIN_PROB)
 
 
 # ─── Order Placement ─────────────────────────────────────────────────────────
@@ -231,22 +232,33 @@ def check_paper_exits(dry_run):
         else:
             current_value = float(market.get("yes_ask_dollars") or 0)
 
-        stop_price = trade["price"] * pnb_config.STOP_LOSS_PCT
-        if current_value > 0 and current_value < stop_price:
-            # Exit: record as settled with partial loss
+        stop_price   = trade["price"] * pnb_config.STOP_LOSS_PCT
+        target_price = trade["price"] * pnb_config.TAKE_PROFIT_PCT
+
+        if current_value <= 0:
+            continue
+
+        if current_value < stop_price:
             pnl = round((current_value - trade["price"]) * trade["contracts"], 4)
             trade["settled"] = True
             trade["result"]  = "exit"
             trade["won"]     = False
             trade["pnl"]     = pnl
-            exited.append(f"{trade['ticker']} {trade['side'].upper()} exit @ ${current_value:.2f} (entry ${trade['price']:.2f}) pnl=${pnl:.2f}")
-            log.info(f"STOP LOSS EXIT: {trade['ticker']} — value ${current_value:.2f} < stop ${stop_price:.2f}")
+            exited.append(f"STOP  {trade['ticker']} {trade['side'].upper()} @ ${current_value:.2f} (entry ${trade['price']:.2f}) pnl=${pnl:.2f}")
+            log.info(f"STOP LOSS: {trade['ticker']} value ${current_value:.2f} < stop ${stop_price:.2f}")
+
+        elif current_value > target_price:
+            pnl = round((current_value - trade["price"]) * trade["contracts"], 4)
+            trade["settled"] = True
+            trade["result"]  = "exit"
+            trade["won"]     = True
+            trade["pnl"]     = pnl
+            exited.append(f"PROFIT {trade['ticker']} {trade['side'].upper()} @ ${current_value:.2f} (entry ${trade['price']:.2f}) pnl=+${pnl:.2f}")
+            log.info(f"TAKE PROFIT: {trade['ticker']} value ${current_value:.2f} > target ${target_price:.2f}")
 
     if exited:
         pnb_paper._save(data)
-        pnb_telegram.send(
-            f"[DRY-RUN] STOP LOSS\n" + "\n".join(f"  {e}" for e in exited)
-        )
+        pnb_telegram.send("[DRY-RUN] EXIT\n" + "\n".join(f"  {e}" for e in exited))
 
 
 def scan_once(dry_run, balance_cents):
