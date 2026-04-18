@@ -496,6 +496,13 @@ def run():
                 # Run adapt — may update thresholds
                 adapt_changes = pnb_learn.adapt()
 
+                # Run watchdog — detects anomalies, alerts if something is wrong
+                try:
+                    import pnb_watchdog
+                    pnb_watchdog.run()
+                except Exception as e:
+                    log.warning(f"Watchdog error: {e}")
+
                 lines = [
                     f"{mode_tag}PNB Crypto — {ts}",
                     f"Windows: {hour_windows} | Signals: {len(hour_signals)}",
