@@ -233,13 +233,13 @@ def check_paper_exits(dry_run):
         else:
             current_value = float(market.get("yes_ask_dollars") or 0)
 
-        stop_price   = trade["price"] * pnb_config.STOP_LOSS_PCT
         target_price = trade["price"] * pnb_config.TAKE_PROFIT_PCT
 
         if current_value <= 0:
             continue
 
-        if current_value < stop_price:
+        stop_pct = pnb_config.STOP_LOSS_PCT
+        if stop_pct > 0 and current_value < trade["price"] * stop_pct:
             pnl = round((current_value - trade["price"]) * trade["contracts"], 4)
             trade["settled"] = True
             trade["result"]  = "exit"

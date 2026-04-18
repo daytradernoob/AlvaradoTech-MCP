@@ -279,26 +279,33 @@ def condition_analysis():
 
 
 def live_readiness():
-    """Check if paper performance meets criteria to go live."""
+    """
+    Check if paper performance meets criteria to go live.
+    Uses natural win rate (excludes stop-loss exits) — exits are risk management,
+    not signal quality indicators.
+    """
     from pnb_config import LIVE_MIN_TRADES, LIVE_MIN_WIN_RATE, LIVE_MIN_PNL
     trades = _load_paper()
     settled = [t for t in trades if t.get("settled")]
     if not settled:
         return {"ready": False, "reason": "no settled trades"}
-    wins = [t for t in settled if t.get("won")]
+
+    natural = [t for t in settled if t.get("result") in ("yes", "no")]
+    wins     = [t for t in natural if t.get("won")]
     total_pnl = sum(t.get("pnl") or 0 for t in settled)
-    win_rate = len(wins) / len(settled)
+    nat_win_rate = len(wins) / len(natural) if natural else 0
+
     checks = {
-        f"trades >= {LIVE_MIN_TRADES}":    len(settled) >= LIVE_MIN_TRADES,
-        f"win_rate >= {LIVE_MIN_WIN_RATE:.0%}": win_rate >= LIVE_MIN_WIN_RATE,
-        f"P&L >= ${LIVE_MIN_PNL:.2f}":     total_pnl >= LIVE_MIN_PNL,
+        f"trades >= {LIVE_MIN_TRADES}":         len(natural) >= LIVE_MIN_TRADES,
+        f"nat_win_rate >= {LIVE_MIN_WIN_RATE:.0%}": nat_win_rate >= LIVE_MIN_WIN_RATE,
+        f"P&L >= ${LIVE_MIN_PNL:.2f}":          total_pnl >= LIVE_MIN_PNL,
     }
     ready = all(checks.values())
     return {
         "ready":    ready,
         "checks":   checks,
-        "trades":   len(settled),
-        "win_rate": round(win_rate, 3),
+        "trades":   len(natural),
+        "win_rate": round(nat_win_rate, 3),
         "pnl":      round(total_pnl, 2),
     }
 

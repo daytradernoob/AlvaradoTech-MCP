@@ -21,7 +21,9 @@ BECKER_YES_CEILING = 0.55     # YES ask above this → retail optimism → buy N
 BECKER_YES_FLOOR   = 0.0      # YES ask below this → buy YES (disabled — unvalidated)
 
 # Early exit (stop loss / take profit)
-STOP_LOSS_PCT        = 0.50   # Exit if position value drops to 50% of entry
+# Stop loss disabled — mid-window price swings are noise on short contracts.
+# 287 stop-loss exits were shaking us out of trades that settled as winners.
+STOP_LOSS_PCT        = 0.0    # 0 = disabled
 TAKE_PROFIT_PCT      = 1.80   # Exit if position value reaches 180% of entry
 TAKE_PROFIT_MIN_MINS = 8      # Only take profit if > 8 min left (else let it settle)
 BECKER_YES_MIN_PROB  = 0.48   # Win prob fallback when BECKER-YES re-enabled
