@@ -1,0 +1,168 @@
+{
+  "meta": {
+    "lastTouchedVersion": "2026.4.15",
+    "lastTouchedAt": "2026-04-20T01:08:26.549Z"
+  },
+  "models": {
+    "mode": "merge",
+    "providers": {
+      "minimax": {
+        "baseUrl": "https://api.minimax.io/anthropic",
+        "api": "anthropic-messages",
+        "authHeader": true,
+        "models": [
+          {
+            "id": "MiniMax-M2",
+            "name": "MiniMax-M2",
+            "contextWindow": 1000000
+          }
+        ]
+      },
+      "ollama": {
+        "baseUrl": "http://192.168.0.146:11434",
+        "apiKey": "ollama-local",
+        "api": "ollama",
+        "models": [
+          {
+            "id": "mcp-qwen3-14b",
+            "name": "mcp-qwen3-14b",
+            "api": "ollama",
+            "contextWindow": 32768
+          },
+          {
+            "id": "qwen3:8b",
+            "name": "qwen3:8b",
+            "api": "ollama"
+          }
+        ]
+      }
+    }
+  },
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "minimax/MiniMax-M2"
+      },
+      "workspace": "/home/rob-alvarado/.openclaw/workspace",
+      "elevatedDefault": "full",
+      "timeoutSeconds": 900
+    }
+  },
+  "tools": {
+    "profile": "coding",
+    "allow": [
+      "group:runtime",
+      "group:fs"
+    ],
+    "web": {
+      "search": {
+        "enabled": true,
+        "provider": "brave"
+      }
+    },
+    "elevated": {
+      "enabled": true,
+      "allowFrom": {
+        "telegram": [
+          "1489345296"
+        ],
+        "discord": [
+          "1289106629861572642"
+        ]
+      }
+    }
+  },
+  "commands": {
+    "native": "auto",
+    "nativeSkills": "auto",
+    "restart": true,
+    "ownerDisplay": "raw"
+  },
+  "session": {
+    "dmScope": "per-channel-peer"
+  },
+  "channels": {
+    "telegram": {
+      "enabled": true,
+      "dmPolicy": "pairing",
+      "botToken": "REDACTED",
+      "groups": {
+        "*": {
+          "requireMention": true
+        }
+      },
+      "groupPolicy": "allowlist",
+      "streaming": "partial"
+    },
+    "discord": {
+      "enabled": true,
+      "token": "REDACTED",
+      "dmPolicy": "allowlist",
+      "allowFrom": [
+        "1289106629861572642",
+        "1289106629861572642"
+      ],
+      "groupPolicy": "allowlist",
+      "guilds": {
+        "1495271678564110531": {
+          "requireMention": false,
+          "users": [
+            "1289106629861572642"
+          ]
+        }
+      }
+    }
+  },
+  "gateway": {
+    "port": 18789,
+    "mode": "local",
+    "bind": "lan",
+    "controlUi": {
+      "allowInsecureAuth": false,
+      "allowedOrigins": [
+        "http://localhost:18789",
+        "http://127.0.0.1:18789",
+        "http://192.168.0.207:18789",
+        "http://192.168.0.207"
+      ]
+    },
+    "auth": {
+      "mode": "token",
+      "token": "REDACTED",
+      "rateLimit": {
+        "maxAttempts": 10,
+        "windowMs": 60000,
+        "lockoutMs": 300000
+      }
+    },
+    "tailscale": {
+      "mode": "off",
+      "resetOnExit": false
+    },
+    "nodes": {}
+  },
+  "plugins": {
+    "entries": {
+      "brave": {
+        "enabled": true,
+        "config": {
+          "webSearch": {
+            "apiKey": "BSACHe45D2oLedvngGhHeSi2h5Cv2_W"
+          }
+        }
+      },
+      "ollama": {
+        "enabled": true
+      },
+      "minimax": {
+        "enabled": true
+      }
+    }
+  },
+  "wizard": {
+    "lastRunAt": "2026-04-19T05:32:23.861Z",
+    "lastRunVersion": "2026.4.15",
+    "lastRunCommand": "doctor",
+    "lastRunMode": "local"
+  }
+}
